@@ -19,7 +19,7 @@ export class LogBootstrapper {
     const formatter = new DefaultFormatter();
     // Chain of responsibility style pattern here...
     const chainTerminal = new NullLogger();
-    const consoleLogChain = new ConsoleLogger(formatter, chainTerminal);
+    const consoleLogChain = new ConsoleLogger(formatter, chainTerminal,config);
     const localStorageLogChain = new LocalStorageLogger(config, consoleLogChain);
     // Writes a message of a given log level to the start of the chain
     const write = (level, args: any[]) => {
@@ -29,7 +29,7 @@ export class LogBootstrapper {
       localStorageLogChain.log({
         level, time, message: jsonMessageWithoutBrackets
       });
-    }
+    };
     // Returns the logging interface for consumers
     return {
       debug(...args) { write(LogLevel.DEBUG, args); },

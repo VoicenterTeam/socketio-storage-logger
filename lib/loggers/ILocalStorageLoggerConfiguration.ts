@@ -10,4 +10,8 @@ export interface ILocalStorageLoggerConfiguration {
    * The approximate maximum size of the log in bytes.
    */
   maxLogSizeInBytes: number;
+  /**
+   * Do i want to log  To console ? T
+   */
+  logToConsole : boolean ;
 }

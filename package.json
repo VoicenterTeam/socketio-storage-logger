@@ -52,5 +52,8 @@
     "sinon": "^1.16.1",
     "tsd": "^0.6.3",
     "typescript": "^1.7.0"
+  },
+  "dependencies": {
+    "socket.io-client": "^2.0.4"
   }
 }
