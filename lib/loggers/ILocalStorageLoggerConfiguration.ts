@@ -11,7 +11,11 @@ export interface ILocalStorageLoggerConfiguration {
    */
   maxLogSizeInBytes: number;
   /**
-   * Do i want to log  To console ? T
+   * Do i want to log  To console ?
    */
   logToConsole : boolean ;
+  /**
+   *  SocketIO-Client Object to senfd the log to the server
+   */
+  SocketIOLogger: any ;
 }

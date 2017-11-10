@@ -22,4 +22,8 @@ export declare class LocalStorageLogger implements ILogger {
      * Returns all log entries that are still held in local storage.
      */
     allEntries(): Array<ILogEntry>;
+    /**
+     * Returns all log entries that are still held in local storage.
+     */
+    allEntriesToServer(): Array<ILogEntry>;
 }

@@ -22,9 +22,11 @@ describe('Local storage logger', function() {
     sut = bootstrapper.bootstrap({
       logName: LOG_NAME,
       maxLogSizeInBytes: MAX_SIZE_IN_BYTES,
-      logToConsole : true
+      logToConsole : true ,
+      SocketIOLogger : null
     });
   });
+
 
   it('should be possible to export formatted log entries', () => {
     // Arrange
@@ -42,6 +44,7 @@ describe('Local storage logger', function() {
       `[${nowFormatted}] [ERROR] "my error",78`
     ]);
   });
+
 
   // TODO:
   // it('should log to console', () => {...})

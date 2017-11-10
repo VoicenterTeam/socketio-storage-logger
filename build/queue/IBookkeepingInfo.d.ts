@@ -9,4 +9,5 @@ export interface IBookkeepingInfo {
     sizeInBytes: number;
     startIndex: number;
     nextFreeIndex: number;
+    lastServerIndex: number;
 }

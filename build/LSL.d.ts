@@ -64,6 +64,10 @@ declare module '__LSL/queue/LimitedSizeQueue' {
                 * Iterates (without removal) through all items stored in the queue.
                 */
             iterate(callback: (item: T) => void): void;
+            /**
+                * Iterates (without removal) through all items stored in the queue.
+                */
+            iterateForServer(callback: (item: T) => void): void;
     }
 }
 
@@ -81,9 +85,13 @@ declare module '__LSL/loggers/ILocalStorageLoggerConfiguration' {
                 */
             maxLogSizeInBytes: number;
             /**
-                * Do i want to log  To console ? T
+                * Do i want to log  To console ?
                 */
             logToConsole: boolean;
+            /**
+                *  SocketIO-Client Object to senfd the log to the server
+                */
+            SocketIOLogger: any;
     }
 }
 
@@ -110,6 +118,10 @@ declare module '__LSL/loggers/LocalStorageLogger' {
                 * Returns all log entries that are still held in local storage.
                 */
             allEntries(): Array<ILogEntry>;
+            /**
+                * Returns all log entries that are still held in local storage.
+                */
+            allEntriesToServer(): Array<ILogEntry>;
     }
 }
 
@@ -190,6 +202,7 @@ declare module '__LSL/ILog' {
         warn(...args: any[]): any;
         error(...args: any[]): any;
         exportToArray(): string[];
+        exportToServer(): void;
     }
 }
 

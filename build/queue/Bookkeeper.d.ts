@@ -40,10 +40,17 @@ export declare class Bookkeeper<T> {
      */
     deleteFirstNode(): Node<T>;
     /**
-     * Iterates through the index values of the elements in the queue. These can be used to retrieve the elements.
+     * Iterates through the index values of the elements in the queue.
+     * These can be used to retrieve the elements.
      * @param callback The function that will be invoked once for each index value used in the queue.
      */
     iterateIndexValues(callback: (index: number) => void): void;
+    /**
+     * Iterates through the index values of the elements in the queue.
+     * These can be used to retrieve the elements.
+     * @param callback The function that will be invoked once for each index value used in the queue.
+     */
+    iterateIndexValuesForServe(callback: (index: number) => void): void;
     /**
      * Returns the next index value (modulo MAX_SAFE_INTEGER).
      * @param index The previous index value.

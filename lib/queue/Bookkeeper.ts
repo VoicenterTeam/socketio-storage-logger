@@ -5,9 +5,9 @@ import {Node} from './Node';
 /**
  * This class keeps track of the start, end and size of the queue
  * stored in local storage. It allows nodes to be created and removed.
- */ 
+ */
 export class Bookkeeper<T> {
-  private _info: IBookkeepingInfo; 
+  private _info: IBookkeepingInfo;
   private _added: Array<Node<T>>;
   private _removed: Array<Node<T>>;
 
@@ -46,9 +46,10 @@ export class Bookkeeper<T> {
       this._info = {
         sizeInBytes: 0,
         startIndex: 0,
-        nextFreeIndex: 0
+        nextFreeIndex: 0,
+        lastServerIndex: 0
       };
-      this.store(); 
+      this.store();
     } else {
       this._info = JSON.parse(serializedInfo);
     }
@@ -86,17 +87,32 @@ export class Bookkeeper<T> {
   deleteFirstNode() {
     const node = Node.fromLocalStorage<T>(this._config, this._info.startIndex);
     this._info.startIndex = this._nextIndex(this._info.startIndex);
+    //make sure we dont try to send to the server logs that allredy been deleted
+    if(this._info.startIndex>this._info.lastServerIndex) this._info.lastServerIndex=this._info.startIndex;
     this._info.sizeInBytes -= node.estimatedSize();
     this._removed.push(node);
     return node;
   }
 
   /**
-   * Iterates through the index values of the elements in the queue. These can be used to retrieve the elements.
+   * Iterates through the index values of the elements in the queue.
+   * These can be used to retrieve the elements.
    * @param callback The function that will be invoked once for each index value used in the queue.
    */
   iterateIndexValues(callback: (index:number) => void) {
     for(let i = this._info.startIndex; i !== this._info.nextFreeIndex; i = this._nextIndex(i)) {
+      callback(i);
+    }
+  }
+  /**
+   * Iterates through the index values of the elements in the queue.
+   * These can be used to retrieve the elements.
+   * @param callback The function that will be invoked once for each index value used in the queue.
+   */
+  iterateIndexValuesForServe(callback: (index:number) => void) {
+    for(let i = this._info.lastServerIndex; i !== this._info.nextFreeIndex; i = this._nextIndex(i)) {
+      this._info.lastServerIndex=i+1;
+    //  console.log("lastServerIndex",this._info.lastServerIndex);
       callback(i);
     }
   }

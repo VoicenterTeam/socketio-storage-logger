@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="086d8c87-664c-4cd5-8b59-87f97d2aaf84" name="C:\Users\Shlomi\Source\RamiConfShir\node_modules\localstorage-logger\build" url="http://localhost">
+        <fileTransfer port="0" mountedRoot="C:\Users\Shlomi\Source\RamiConfShir\node_modules\localstorage-logger\build" accessType="MOUNT" />
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -30,4 +30,8 @@ export declare class LimitedSizeQueue<T> {
      * Iterates (without removal) through all items stored in the queue.
      */
     iterate(callback: (item: T) => void): void;
+    /**
+     * Iterates (without removal) through all items stored in the queue.
+     */
+    iterateForServer(callback: (item: T) => void): void;
 }

@@ -6,7 +6,7 @@ import {IQueueConfiguration} from './IQueueConfiguration';
  * A limited-size queue that is persisted to local storage. Enqueuing
  * elements can remove the oldest elements in order to free up space.
  */
-export class LimitedSizeQueue<T> {
+export class  LimitedSizeQueue<T> {
   private _bookkeeper: Bookkeeper<T>;
 
   /**
@@ -67,8 +67,22 @@ export class LimitedSizeQueue<T> {
    */
   iterate(callback: (item: T) => void) {
     this._bookkeeper.iterateIndexValues(i => {
-      const node = Node.fromLocalStorage<T>(this._config, i)
+      const node = Node.fromLocalStorage<T>(this._config, i);
       callback(node.value);
     });
   }
+
+  /**
+   * Iterates (without removal) through all items stored in the queue.
+   */
+  iterateForServer(callback: (item: T) => void) {
+    this._bookkeeper.iterateIndexValuesForServe(i => {
+      const node = Node.fromLocalStorage<T>(this._config, i);
+      callback(node.value);
+    });
+  }
+
+
+
+
 }

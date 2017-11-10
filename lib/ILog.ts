@@ -8,4 +8,5 @@ export interface ILog {
   error(...args: any[]);
 
   exportToArray(): string[];
+  exportToServer(): void ;
 }
