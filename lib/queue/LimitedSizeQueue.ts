@@ -76,11 +76,31 @@ export class  LimitedSizeQueue<T> {
    * Iterates (without removal) through all items stored in the queue.
    */
   iterateForServer(callback: (item: T) => void) {
-    this._bookkeeper.iterateIndexValuesForServe(i => {
+    this._bookkeeper.iterateIndexValuesForServer(i => {
       const node = Node.fromLocalStorage<T>(this._config, i);
       callback(node.value);
     });
   }
+
+  /**
+   * cleanAll  items stored in LocalStorage.
+   */
+  cleanAll() {
+
+      var arr = []; // Array to hold the keys
+      // Iterate over localStorage and insert the keys that meet the condition into arr
+      for (var i = 0; i < localStorage.length; i++){
+        if (localStorage.key(i).substr( 0, ( this._config.keyPrefix).length) ===  this._config.keyPrefix)
+          arr.push(localStorage.key(i));
+      }
+
+      for (var  i = 0; i < arr.length; i++) {
+        localStorage.removeItem(arr[i]);
+      }
+    this._bookkeeper.reset();
+
+    }
+
 
 
 

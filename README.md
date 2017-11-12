@@ -8,7 +8,7 @@ https://github.com/voicenter/paStash/blob/master/lib/inputs/input_socketio.js
 This JavaScript library provides a mechanism to log to local storage and export the most recent entries. It will overwrite the oldest entries when writing a new entry if adding the entry makes the log bigger than `maxLogSizeInBytes`.
 ## Install with NPM
 ```
-npm install voicenter/localstorage-logger --save
+npm install voicenter/localstorage-logger-socketio --save
 ```
 ## Motivation
 At the time of writing, all the libraries we could find that provide logging or queuing in local storage used a single storage key. This means that they had to serialize the whole log/queue on any modification. This resulted in worse performance as the log got bigger.

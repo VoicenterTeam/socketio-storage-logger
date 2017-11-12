@@ -6,6 +6,7 @@ export interface ILog {
     info(...args: any[]): any;
     warn(...args: any[]): any;
     error(...args: any[]): any;
+    clean(): void;
     exportToArray(): string[];
     exportToServer(): void;
 }

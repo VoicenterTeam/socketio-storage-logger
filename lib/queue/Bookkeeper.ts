@@ -70,6 +70,13 @@ export class Bookkeeper<T> {
   }
 
   /**
+   * Calculates the sizeInBytes .
+   */
+  checkSizeInBytes() {
+    return this._info.sizeInBytes;
+  }
+
+  /**
    * Creates a new node at the end of the queue.
    * @param value The value to store as an element of the queue.
    */
@@ -109,7 +116,7 @@ export class Bookkeeper<T> {
    * These can be used to retrieve the elements.
    * @param callback The function that will be invoked once for each index value used in the queue.
    */
-  iterateIndexValuesForServe(callback: (index:number) => void) {
+  iterateIndexValuesForServer(callback: (index:number) => void) {
     for(let i = this._info.lastServerIndex; i !== this._info.nextFreeIndex; i = this._nextIndex(i)) {
       this._info.lastServerIndex=i+1;
     //  console.log("lastServerIndex",this._info.lastServerIndex);

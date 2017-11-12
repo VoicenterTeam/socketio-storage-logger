@@ -68,6 +68,10 @@ declare module '__LSL/queue/LimitedSizeQueue' {
                 * Iterates (without removal) through all items stored in the queue.
                 */
             iterateForServer(callback: (item: T) => void): void;
+            /**
+                * cleanAll  items stored in LocalStorage.
+                */
+            cleanAll(): void;
     }
 }
 
@@ -118,6 +122,10 @@ declare module '__LSL/loggers/LocalStorageLogger' {
                 * Returns all log entries that are still held in local storage.
                 */
             allEntries(): Array<ILogEntry>;
+            /**
+                * Returns all log entries that are still held in local storage.
+                */
+            cleanAllEntries(): void;
             /**
                 * Returns all log entries that are still held in local storage.
                 */
@@ -175,6 +183,13 @@ declare module '__LSL/formatters/DefaultFormatter' {
                 */
             format(entry: ILogEntry): string;
     }
+    export class JSONFormatter implements ILogEntryFormatter {
+            /**
+                * Formats a log entry as [TIME] [LEVEL] MESSAGE
+                * @param entry The log entry
+                */
+            format(entry: ILogEntry): string;
+    }
 }
 
 declare module '__LSL/LogBootstrapper' {
@@ -201,6 +216,7 @@ declare module '__LSL/ILog' {
         info(...args: any[]): any;
         warn(...args: any[]): any;
         error(...args: any[]): any;
+        clean(): void;
         exportToArray(): string[];
         exportToServer(): void;
     }

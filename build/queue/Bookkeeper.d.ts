@@ -31,6 +31,10 @@ export declare class Bookkeeper<T> {
      */
     remainingSpace(): number;
     /**
+     * Calculates the sizeInBytes .
+     */
+    checkSizeInBytes(): number;
+    /**
      * Creates a new node at the end of the queue.
      * @param value The value to store as an element of the queue.
      */
@@ -50,7 +54,7 @@ export declare class Bookkeeper<T> {
      * These can be used to retrieve the elements.
      * @param callback The function that will be invoked once for each index value used in the queue.
      */
-    iterateIndexValuesForServe(callback: (index: number) => void): void;
+    iterateIndexValuesForServer(callback: (index: number) => void): void;
     /**
      * Returns the next index value (modulo MAX_SAFE_INTEGER).
      * @param index The previous index value.

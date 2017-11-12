@@ -10,3 +10,10 @@ export declare class DefaultFormatter implements ILogEntryFormatter {
      */
     format(entry: ILogEntry): string;
 }
+export declare class JSONFormatter implements ILogEntryFormatter {
+    /**
+     * Formats a log entry as [TIME] [LEVEL] MESSAGE
+     * @param entry The log entry
+     */
+    format(entry: ILogEntry): string;
+}

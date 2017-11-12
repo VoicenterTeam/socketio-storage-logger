@@ -39,6 +39,22 @@ export class Node<T> {
   remove() {
     localStorage.removeItem(this._key);
   }
+  /**
+   * Removes the entry from local storage if it exists.
+
+  static removeAll(config: IQueueConfiguration) {
+    var arr = []; // Array to hold the keys
+// Iterate over localStorage and insert the keys that meet the condition into arr
+    for (var i = 0; i < localStorage.length; i++){
+      if (localStorage.key(i).substr( 0, (config.keyPrefix+"-item-").length) === config.keyPrefix+"-item-")
+        arr.push(localStorage.key(i));
+      }
+
+    for (var  i = 0; i < arr.length; i++) {
+      localStorage.removeItem(arr[i]);
+    }
+  }
+   */
 
   /**
    * Creates a key for an entry.
@@ -59,4 +75,8 @@ export class Node<T> {
     const value = JSON.parse(serializedNode);
     return new Node<T>(config, index, value);
   }
+
+
 }
+
+

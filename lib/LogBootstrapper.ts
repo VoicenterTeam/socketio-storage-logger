@@ -18,12 +18,16 @@ export class LogBootstrapper {
    * Returns a logging interface that has been set up with default loggers and formatters.
    */
   bootstrap(config: ILocalStorageLoggerConfiguration) : ILog {
-    const formatter = new DefaultFormatter();
+    const formatter = new DefaultFormatter  ();
+    //   const formatter = new DefaultFormatter();
     // Chain of responsibility style pattern here...
     const chainTerminal = new NullLogger();
     const consoleLogChain = new ConsoleLogger(formatter, chainTerminal,config);
     const localStorageLogChain = new LocalStorageLogger(config, consoleLogChain);
-    // Writes a message of a given log level to the start of the chain
+    const cleanlocalStorage = () => {
+      localStorageLogChain.cleanAllEntries();
+    }
+      // Writes a message of a given log level to the start of the chain
     const write = (level, args: any[]) => {
       const time = this._timestampProvider().toISOString();
       const jsonMessage = JSON.stringify(args,censor(args));
@@ -38,6 +42,7 @@ export class LogBootstrapper {
       info(...args) { write(LogLevel.INFO, args); },
       warn(...args) { write(LogLevel.WARN, args); },
       error(...args) { write(LogLevel.ERROR, args); },
+      clean(){cleanlocalStorage()},
       exportToArray() { return localStorageLogChain.allEntries().map(entry => formatter.format(entry)); },
       exportToServer: function () {
         if (config.SocketIOLogger != null || config.SocketIOLogger.connected) {
