@@ -1,1 +1,1 @@
-module.exports = require('./src/StorageLogger');
+module.exports = require('./build/StorageLogger');
