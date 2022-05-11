@@ -14,13 +14,13 @@ npm install voicenter/socketio-storage-logger --save
 
 Parameter | Description |
 --- | --- |
-`logToConsole` | This defines if logger should contain default behavior like logging data to console.
-`overloadGlobalConsole` | This defines if the global console object should be overloaded with logger functionality.
-`namespace` | This defines the namespace for the storage key. This value should be unique across the projects.
-`socketUrl` | This defines the socket Url used for socket-io connection.
-`socketEmitInterval` | This defines the interval for sending logs using sockets in milliseconds.
-`getItem` | `(storage: string) => string;` This defines the custom function for getting logs from storage. Function should be synchronous.
-`setItem` | `(storage: string, logs: string) => void;` This defines the custom function for setting logs to storage. Function should be synchronous.
+`logToConsole` | `boolean` **default: true**. This defines if logger should contain default behavior like logging data to console.
+`overloadGlobalConsole` | `boolean` **default: false**. This defines if the global console object should be overloaded with logger functionality.
+`namespace` | `string`. This defines the namespace for the storage key. This value should be unique across the projects.
+`socketUrl` | `string`. This defines the socket Url used for socket-io connection.
+`socketEmitInterval` | `number` **default: 60000**. This defines the interval for sending logs using sockets in milliseconds.
+`getItem` | `(storage: string) => string;`. This defines the custom function for getting logs from storage. Function should be synchronous.
+`setItem` | `(storage: string, logs: string) => void;`. This defines the custom function for setting logs to storage. Function should be synchronous.
 
 ## Usage
 
