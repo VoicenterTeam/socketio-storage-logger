@@ -19,6 +19,10 @@ const isPromise_1 = require("./helpers/isPromise");
 // @ts-ignore
 const globalObject = this.window ? this.window : global ? global : undefined;
 class StorageLogger {
+    /**
+     * Initialize storage logger
+     * @param config The configuration of the logger.
+     */
     constructor(config) {
         var _a, _b;
         this.validateConfig(config);
@@ -41,6 +45,10 @@ class StorageLogger {
             this._overloadConsole();
         }
     }
+    /**
+     * Emits stored logs to the server and clears the log storage in case the emit operation was successful
+     * @return {Promise<void>}
+     */
     emitLogs() {
         return __awaiter(this, void 0, void 0, function* () {
             if (this._emitInProgress)
@@ -82,18 +90,31 @@ class StorageLogger {
             }
         });
     }
+    /**
+     * Used to initialize new socket connection
+     * @param socketUrl The url used for the socket connection.
+     * @return void
+     */
     initSocketConnection(socketUrl) {
         this.socket = (0, socket_io_client_1.io)(socketUrl);
         this._interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
             yield this.emitLogs();
         }), this.socketEmitInterval);
     }
+    /**
+     * Used to interrupt socket connection
+     * @return void
+     */
     disconnectSocket() {
         if (!this.socket || !this._interval)
             return;
         this.socket.disconnect();
         clearInterval(this._interval);
     }
+    /**
+     * Used to overload the global console object by logger methods.
+     * @return void
+     */
     _overloadConsole() {
         const self = this;
         globalObject.console = Object.assign(globalObject.console, {
@@ -115,15 +136,28 @@ class StorageLogger {
             }
         });
     }
+    /**
+     * Used to initialize the storage if it wasn't created before.
+     * @return void
+     */
     _initStorage() {
         const storedLogs = this._getItem(this._storageId);
         if (!storedLogs || typeof storedLogs !== "string") {
             this._setItem(this._storageId, JSON.stringify({}));
         }
     }
+    /**
+     * Reset log storage
+     * @return void
+     */
     resetStorage() {
         this._setItem(this._storageId, JSON.stringify({}));
     }
+    /**
+     * Validate logger configuration parameters
+     * @param config The configuration of the logger.
+     * @return void
+     */
     validateConfig(config) {
         if (!config.socketUrl) {
             throw new Error("Config property \"socketUrl\" should be provided!");
@@ -142,9 +176,21 @@ class StorageLogger {
                 throw new Error('setItem function should be synchronous!');
         }
     }
+    /**
+     * Get storage name which is used to access the logs storage
+     * @param namespace The unique namespace of the storage.
+     * @param suffix The custom suffix for the storage name.
+     * @return string
+     */
     getStorageName(namespace, suffix = "_LOGGER_") {
         return namespace.toString().toUpperCase() + suffix + Date.now();
     }
+    /**
+     * Does common logic for logging data.
+     * @param arguments The arguments of the log where the first argument contains the log level and other
+     * arguments are logs to be stored
+     * @return void
+     */
     _processLog(...args) {
         try {
             if (args.length < 2)
@@ -165,33 +211,64 @@ class StorageLogger {
             this._errorMethod(e);
         }
     }
+    /**
+     * Logs info data into the storage
+     * @param arguments The arguments to be logged.
+     * @return void
+     */
     log(...args) {
         this._processLog("INFO", ...args);
         if (this._logToConsole) {
             this._logMethod.apply(globalObject.console, args);
         }
     }
+    /**
+     * Logs warn data into the storage
+     * @param arguments The arguments to be logged.
+     * @return void
+     */
     warn(...args) {
         this._processLog("WARN", ...args);
         if (this._logToConsole) {
             this._warnMethod.apply(globalObject.console, args);
         }
     }
+    /**
+     * Logs error data into the storage
+     * @param arguments The arguments to be logged.
+     * @return void
+     */
     error(...args) {
         this._processLog("ERROR", ...args);
         if (this._logToConsole) {
             this._errorMethod.apply(globalObject.console, args);
         }
     }
+    /**
+     * Logs debug data into the storage
+     * @param arguments The arguments to be logged.
+     * @return void
+     */
     debug(...args) {
         this._processLog("DEBUG", ...args);
         if (this._logToConsole) {
             this._debugMethod.apply(globalObject.console, args);
         }
     }
+    /**
+     * The default method for getting logs from storage
+     * @param storageId The identifier of storage where logs are stored.
+     * @return string || null
+     */
     _getItemDefault(storageId) {
         return localStorage.getItem(storageId);
     }
+    /**
+     * The default method for setting logs into the storage
+     * @param storageId The identifier of storage where to store the logs.
+     * @param logs The logs to be stored.
+     * @return void
+     */
     _setItemDefault(storage, logs) {
         try {
             localStorage.setItem(storage, logs);
@@ -200,6 +277,11 @@ class StorageLogger {
             this._errorMethod(e);
         }
     }
+    /**
+     * Used to form a key which will be used to store a log in the storage
+     * @param level The log level. For example: Info, Warn, Error etc..
+     * @return string
+     */
     formItemKey(level) {
         const date = new Date().toISOString();
         this._logIndex++;
