@@ -33,8 +33,9 @@ export interface StorageLoggerConfig {
     getItem: (storage: string) => string;
 
     /**
-     * This defines the prefix the queue should use for all local storage entries.
-     * There should be a unique prefix for each queue.
+     * This defines the custom function for setting logs to storage.
+     * It is useful if the custom storage is used for logs storage.
+     * Function should be synchronous.
      */
     setItem: (storage: string, logs: string) => void;
 }
