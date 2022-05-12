@@ -7,7 +7,7 @@ It also allows you to overload the global console logging methods (like `log`, `
 
 ## Install with NPM
 ```
-npm install voicenter/socketio-storage-logger --save
+npm install @voicenter-team/socketio-storage-logger --save
 ```
 
 ## Configuration parameters
@@ -27,13 +27,13 @@ Parameter | Description |
 To start using the library first of all import it:
 
 ```
-const { StorageLogger } = require("socketio-storage-logger")
+const { StorageLogger } = require("@voicenter-team/socketio-storage-logger")
 ```
 
 or 
 
 ```
-import { StorageLogger } from "socketio-storage-logger"
+import { StorageLogger } from "@voicenter-team/socketio-storage-logger"
 ```
 
 and then create instance of the logger:
@@ -47,7 +47,7 @@ const logger = new StorageLogger({
 
 To use custom storage you should provide getter (`getItem`) and setter (`setItem`) for your storage. Next example shows usage of custom storage on the example of `node-storage`:
 ```
-const { StorageLogger } = require("socketio-storage-logger")
+const { StorageLogger } = require("@voicenter-team/socketio-storage-logger")
 const Storage = require('node-storage');
 
 const store = new Storage('./logs.json');
