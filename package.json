@@ -1,5 +1,5 @@
 {
-  "name": "localstorage-logger",
+  "name": "socketio-storage-logger",
   "version": "0.2.0",
   "description": "Logger that allows you to save logged information into your storage and emit stored logs via socket.io",
   "main": "index.js",
@@ -9,7 +9,6 @@
   "author": "Serhii Kundys",
   "license": "ISC",
   "dependencies": {
-    "node-storage": "0.0.9",
     "socket.io-client": "^4.5.0"
   },
   "devDependencies": {
