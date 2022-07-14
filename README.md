@@ -18,6 +18,7 @@ Parameter | Description |
 `overloadGlobalConsole` | `boolean` **default: false**. This defines if the global console object should be overloaded with logger functionality.
 `namespace` | `string`. This defines the namespace for the storage key. This value should be unique across the projects.
 `socketUrl` | `string`. This defines the socket Url used for socket-io connection.
+`connectOptions` | `object`. Options for socket connection configuring.
 `socketEmitInterval` | `number` **default: 60000**. This defines the interval for sending logs using sockets in milliseconds.
 `getItem` | `(storage: string) => string;`. This defines the custom function for getting logs from storage. Function should be synchronous.
 `setItem` | `(storage: string, logs: string) => void;`. This defines the custom function for setting logs to storage. Function should be synchronous.
@@ -41,6 +42,11 @@ and then create instance of the logger:
 ```
 const logger = new StorageLogger({
     socketUrl: "https://your-server-domain.com",
+    connectOptions: {
+      reconnection: true,
+      reconnectionDelay: 5000,
+      transports: ['websocket']
+    }
     namespace: "test-project"
 })
 ```
@@ -78,4 +84,25 @@ logger.error("Test error method")
 console.log("Test log method")
 console.warn("Test warn method")
 console.error("Test error method")
+```
+
+## Usage in Chrome Extension project
+
+First of all import AsyncStorageLogger:
+```
+  import {StorageLogger} from "@voicenter-team/socketio-storage-logger/build/AsyncStorageLogger"
+```
+Then initialize logger socket and pass it into Logger options. Use `socketConnection` option instead of `socketUrl`
+```
+ import {StorageLogger} from "@voicenter-team/socketio-storage-logger/build/AsyncStorageLogger"
+
+ const loggerSocket = io(serverUrl, loggerConnectOptions)
+ 
+ const logger = new StorageLogger({
+    socketConnection: loggerSocket,
+    logToConsole: true,
+    overloadGlobalConsole: false,
+    namespace: "extension-namespace",
+    socketEmitInterval: 10000
+  })
 ```

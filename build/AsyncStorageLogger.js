@@ -12,27 +12,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StorageLogger = void 0;
-//import { io, Socket } from 'socket.io-client';
-// @ts-ignore
-//import io from "socket.io-client/dist/socket.io.js"
-const socket_io_client_1 = __importDefault(require("socket.io-client"));
+exports.AsyncStorageLogger = void 0;
 const config_1 = __importDefault(require("./config/config"));
 const isPromise_1 = require("./helpers/isPromise");
 let globalConsole = console;
-const defaultConfig = {
-    socketUrl: "http://127.0.0.1:3000/",
-    connectOptions: {
-        reconnection: true,
-        reconnectionDelay: 5000,
-        reconnectionAttempts: 10,
-        perMessageDeflate: false,
-        upgrade: false,
-        transports: ['websocket'],
-        debug: false
-    },
-};
-class StorageLogger {
+class AsyncStorageLogger {
     /**
      * Initialize storage logger
      * @param config The configuration of the logger.
@@ -53,8 +37,11 @@ class StorageLogger {
         this._warnMethod = globalConsole.warn;
         this._errorMethod = globalConsole.error;
         this._debugMethod = globalConsole.debug;
+        this.initLogger(config);
+    }
+    initLogger(config) {
         this._initStorage();
-        this.initSocketConnection(config);
+        this.initSocketConnection(config.socketConnection);
         if (this._overloadGlobalConsole) {
             this._overloadConsole();
         }
@@ -68,7 +55,7 @@ class StorageLogger {
             if (this._emitInProgress)
                 return;
             try {
-                const storedLogs = this._getItem(this._storageId);
+                const storedLogs = yield this._getItem(this._storageId);
                 if (!storedLogs)
                     return;
                 let keysToReset = [];
@@ -85,13 +72,13 @@ class StorageLogger {
                 }
                 // During emitting sockets new logs could be added
                 // To ensure that newly added logs which were added during socket emits will not be lost
-                const logs = this._getItem(this._storageId);
+                const logs = yield this._getItem(this._storageId);
                 if (!logs)
                     return;
                 const allLogs = JSON.parse(logs);
                 keysToReset.forEach((key) => delete allLogs[key]);
                 // Update storage logs object after socket emits
-                this._setItem(this._storageId, JSON.stringify(allLogs));
+                yield this._setItem(this._storageId, JSON.stringify(allLogs));
             }
             catch (err) {
                 this._errorMethod(err);
@@ -106,24 +93,23 @@ class StorageLogger {
      * @param socketUrl The url used for the socket connection.
      * @return void
      */
-    initSocketConnection(config) {
-        const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl;
-        const connectOptions = Object.assign(Object.assign({}, defaultConfig.connectOptions), config.connectOptions);
-        this.socket = (0, socket_io_client_1.default)(connectUrl, connectOptions);
+    initSocketConnection(socketConnection) {
+        this.socket = socketConnection;
+        console.log('loggerSocket', this.socket);
         this.socket.on("connect", () => {
-            console.log("ON CONNECT loggerSocket");
+            console.log("ON CONNECT AsyncStorageLogger");
         });
         this.socket.on("reconnect", () => {
-            console.log("ON reconnect loggerSocket");
+            console.log("ON reconnect AsyncStorageLogger");
         });
         this.socket.on("reconnection_attempt", () => {
-            console.log("ON reconnection_attempt loggerSocket");
+            console.log("ON reconnection_attempt AsyncStorageLogger");
         });
         this.socket.on("connect_error", (error) => {
-            console.log("ON connect_error loggerSocket", error);
+            console.log("ON connect_error AsyncStorageLogger", error);
         });
         this.socket.on("error", (error) => {
-            console.log("ON error loggerSocket", error);
+            console.log("ON error AsyncStorageLogger", error);
         });
         this._interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
             yield this.emitLogs();
@@ -169,17 +155,21 @@ class StorageLogger {
      * @return void
      */
     _initStorage() {
-        const storedLogs = this._getItem(this._storageId);
-        if (!storedLogs || typeof storedLogs !== "string") {
-            this._setItem(this._storageId, JSON.stringify({}));
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            const storedLogs = yield this._getItem(this._storageId);
+            if (!storedLogs || typeof storedLogs !== "string") {
+                yield this._setItem(this._storageId, JSON.stringify({}));
+            }
+        });
     }
     /**
      * Reset log storage
      * @return void
      */
     resetStorage() {
-        this._setItem(this._storageId, JSON.stringify({}));
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._setItem(this._storageId, JSON.stringify({}));
+        });
     }
     /**
      * Validate logger configuration parameters
@@ -187,18 +177,21 @@ class StorageLogger {
      * @return void
      */
     validateConfig(config) {
+        if (!config.socketConnection) {
+            throw new Error("Config property \"socketConnection\" should be provided!");
+        }
         if (!config.namespace) {
             throw new Error("Config property \"namespace\" should be provided!");
         }
         if (config.getItem && typeof config.getItem === 'function') {
             const res = config.getItem('');
-            if ((0, isPromise_1.isPromise)(res))
-                throw new Error('getItem function should be synchronous!');
+            if (!(0, isPromise_1.isPromise)(res))
+                throw new Error('getItem function should be asynchronous!');
         }
         if (config.setItem && typeof config.setItem === 'function') {
             const res = config.setItem('', '');
-            if ((0, isPromise_1.isPromise)(res))
-                throw new Error('setItem function should be synchronous!');
+            if (!(0, isPromise_1.isPromise)(res))
+                throw new Error('setItem function should be asynchronous!');
         }
     }
     /**
@@ -217,24 +210,26 @@ class StorageLogger {
      * @return void
      */
     _processLog(...args) {
-        try {
-            if (args.length < 2)
-                return;
-            const level = args[0];
-            const logs = args.slice(1);
-            const storedLogs = this._getItem(this._storageId);
-            if (!storedLogs)
-                return;
-            const parsedLogs = JSON.parse(storedLogs);
-            const key = this.formItemKey(level);
-            const message = logs.join(' ');
-            const time = new Date().toISOString();
-            parsedLogs[key] = JSON.stringify({ level, time, message });
-            this._setItem(this._storageId, JSON.stringify(parsedLogs));
-        }
-        catch (e) {
-            this._errorMethod(e);
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                if (args.length < 2)
+                    return;
+                const level = args[0];
+                const logs = args.slice(1);
+                const storedLogs = yield this._getItem(this._storageId);
+                if (!storedLogs)
+                    return;
+                const parsedLogs = JSON.parse(storedLogs);
+                const key = this.formItemKey(level);
+                const message = logs.join(' ');
+                const time = new Date().toISOString();
+                parsedLogs[key] = JSON.stringify({ level, time, message });
+                yield this._setItem(this._storageId, JSON.stringify(parsedLogs));
+            }
+            catch (e) {
+                this._errorMethod(e);
+            }
+        });
     }
     /**
      * Logs info data into the storage
@@ -242,10 +237,12 @@ class StorageLogger {
      * @return void
      */
     log(...args) {
-        this._processLog("INFO", ...args);
-        if (this._logToConsole) {
-            this._logMethod.apply(globalConsole, args);
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._processLog("INFO", ...args);
+            if (this._logToConsole) {
+                this._logMethod.apply(globalConsole, args);
+            }
+        });
     }
     /**
      * Logs warn data into the storage
@@ -253,10 +250,12 @@ class StorageLogger {
      * @return void
      */
     warn(...args) {
-        this._processLog("WARN", ...args);
-        if (this._logToConsole) {
-            this._warnMethod.apply(globalConsole, args);
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._processLog("WARN", ...args);
+            if (this._logToConsole) {
+                this._warnMethod.apply(globalConsole, args);
+            }
+        });
     }
     /**
      * Logs error data into the storage
@@ -264,10 +263,12 @@ class StorageLogger {
      * @return void
      */
     error(...args) {
-        this._processLog("ERROR", ...args);
-        if (this._logToConsole) {
-            this._errorMethod.apply(globalConsole, args);
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._processLog("ERROR", ...args);
+            if (this._logToConsole) {
+                this._errorMethod.apply(globalConsole, args);
+            }
+        });
     }
     /**
      * Logs debug data into the storage
@@ -275,10 +276,12 @@ class StorageLogger {
      * @return void
      */
     debug(...args) {
-        this._processLog("DEBUG", ...args);
-        if (this._logToConsole) {
-            this._debugMethod.apply(globalConsole, args);
-        }
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this._processLog("DEBUG", ...args);
+            if (this._logToConsole) {
+                this._debugMethod.apply(globalConsole, args);
+            }
+        });
     }
     /**
      * The default method for getting logs from storage
@@ -286,7 +289,11 @@ class StorageLogger {
      * @return string || null
      */
     _getItemDefault(storageId) {
-        return localStorage.getItem(storageId);
+        return __awaiter(this, void 0, void 0, function* () {
+            // @ts-ignore
+            const results = yield chrome.storage.local.get(storageId);
+            return results[storageId];
+        });
     }
     /**
      * The default method for setting logs into the storage
@@ -294,13 +301,16 @@ class StorageLogger {
      * @param logs The logs to be stored.
      * @return void
      */
-    _setItemDefault(storage, logs) {
-        try {
-            localStorage.setItem(storage, logs);
-        }
-        catch (e) {
-            this._errorMethod(e);
-        }
+    _setItemDefault(storageId, logs) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                // @ts-ignore
+                yield chrome.storage.local.set({ [storageId]: logs });
+            }
+            catch (e) {
+                this._errorMethod(e);
+            }
+        });
     }
     /**
      * Used to form a key which will be used to store a log in the storage
@@ -313,4 +323,4 @@ class StorageLogger {
         return `${level}-${this.namespace}-${date}-${this._logIndex}`;
     }
 }
-exports.StorageLogger = StorageLogger;
+exports.AsyncStorageLogger = AsyncStorageLogger;
