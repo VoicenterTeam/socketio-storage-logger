@@ -16,11 +16,6 @@ export interface AsyncStorageLoggerConfig {
     namespace: string;
 
     /**
-     * This defines the socket Url used for socket-io connection.
-     */
-    socketUrl: string;
-
-    /**
      * This defines the initialized socket socket-io connection.
      */
     socketConnection: any;

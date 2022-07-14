@@ -21,9 +21,9 @@ export interface StorageLoggerConfig {
     socketUrl: string;
 
     /**
-     * This defines the initialized socket socket-io connection.
+     * This defines the options for socket connection.
      */
-    socketConnection: any;
+    connectOptions: object;
 
     /**
      * This defines the interval for sending logs using sockets in milliseconds.

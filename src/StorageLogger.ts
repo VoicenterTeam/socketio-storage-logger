@@ -115,7 +115,7 @@ export class StorageLogger {
      * @param socketUrl The url used for the socket connection.
      * @return void
      */
-    initSocketConnection(config: any): void {
+    initSocketConnection(config: StorageLoggerConfig): void {
         const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl
 
         const connectOptions = {
@@ -124,22 +124,6 @@ export class StorageLogger {
         }
 
         this.socket = io(connectUrl, connectOptions);
-
-        this.socket.on("connect", () => {
-            console.log("ON CONNECT loggerSocket")
-        });
-        this.socket.on("reconnect", () => {
-            console.log("ON reconnect loggerSocket")
-        });
-        this.socket.on("reconnection_attempt", () => {
-            console.log("ON reconnection_attempt loggerSocket")
-        });
-        this.socket.on("connect_error", (error: any) => {
-            console.log("ON connect_error loggerSocket", error)
-        });
-        this.socket.on("error", (error: any) => {
-            console.log("ON error loggerSocket", error)
-        });
 
         this._interval = setInterval(async () => {
             await this.emitLogs()

@@ -103,24 +103,6 @@ export class AsyncStorageLogger {
     initSocketConnection(socketConnection: any): void {
         this.socket = socketConnection
 
-        console.log('loggerSocket', this.socket)
-
-        this.socket.on("connect", () => {
-            console.log("ON CONNECT AsyncStorageLogger")
-        });
-        this.socket.on("reconnect", () => {
-            console.log("ON reconnect AsyncStorageLogger")
-        });
-        this.socket.on("reconnection_attempt", () => {
-            console.log("ON reconnection_attempt AsyncStorageLogger")
-        });
-        this.socket.on("connect_error", (error: any) => {
-            console.log("ON connect_error AsyncStorageLogger", error)
-        });
-        this.socket.on("error", (error: any) => {
-            console.log("ON error AsyncStorageLogger", error)
-        });
-
         this._interval = setInterval(async () => {
             await this.emitLogs()
         }, this.socketEmitInterval)

@@ -110,21 +110,6 @@ class StorageLogger {
         const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl;
         const connectOptions = Object.assign(Object.assign({}, defaultConfig.connectOptions), config.connectOptions);
         this.socket = (0, socket_io_client_1.default)(connectUrl, connectOptions);
-        this.socket.on("connect", () => {
-            console.log("ON CONNECT loggerSocket");
-        });
-        this.socket.on("reconnect", () => {
-            console.log("ON reconnect loggerSocket");
-        });
-        this.socket.on("reconnection_attempt", () => {
-            console.log("ON reconnection_attempt loggerSocket");
-        });
-        this.socket.on("connect_error", (error) => {
-            console.log("ON connect_error loggerSocket", error);
-        });
-        this.socket.on("error", (error) => {
-            console.log("ON error loggerSocket", error);
-        });
         this._interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
             yield this.emitLogs();
         }), this.socketEmitInterval);
