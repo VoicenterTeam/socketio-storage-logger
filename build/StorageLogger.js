@@ -19,6 +19,7 @@ exports.StorageLogger = void 0;
 const socket_io_client_1 = __importDefault(require("socket.io-client"));
 const config_1 = __importDefault(require("./config/config"));
 const isPromise_1 = require("./helpers/isPromise");
+const helpers_1 = require("./helpers/helpers");
 let globalConsole = console;
 const defaultConfig = {
     socketUrl: "http://127.0.0.1:3000/",
@@ -53,6 +54,14 @@ class StorageLogger {
         this._warnMethod = globalConsole.warn;
         this._errorMethod = globalConsole.error;
         this._debugMethod = globalConsole.debug;
+        this.initLogger(config);
+    }
+    /**
+     * Used to initialize logger. Initializes storage, establishes socket connection and overloads console if needed
+     * @param config The logger config.
+     * @return void
+     */
+    initLogger(config) {
         this._initStorage();
         this.initSocketConnection(config);
         if (this._overloadGlobalConsole) {
@@ -88,10 +97,9 @@ class StorageLogger {
                 const logs = this._getItem(this._storageId);
                 if (!logs)
                     return;
-                const allLogs = JSON.parse(logs);
-                keysToReset.forEach((key) => delete allLogs[key]);
+                const logsToStore = (0, helpers_1.getLogsToStore)(logs, keysToReset);
                 // Update storage logs object after socket emits
-                this._setItem(this._storageId, JSON.stringify(allLogs));
+                this._setItem(this._storageId, JSON.stringify(logsToStore));
             }
             catch (err) {
                 this._errorMethod(err);
@@ -188,12 +196,11 @@ class StorageLogger {
     }
     /**
      * Get storage name which is used to access the logs storage
-     * @param namespace The unique namespace of the storage.
      * @param suffix The custom suffix for the storage name.
      * @return string
      */
-    getStorageName(namespace, suffix = "_LOGGER_") {
-        return namespace.toString().toUpperCase() + suffix + Date.now();
+    getStorageName(suffix = "_LOGGER_") {
+        return this.namespace.toString().toUpperCase() + suffix + Date.now();
     }
     /**
      * Does common logic for logging data.
@@ -205,16 +212,13 @@ class StorageLogger {
         try {
             if (args.length < 2)
                 return;
-            const level = args[0];
-            const logs = args.slice(1);
             const storedLogs = this._getItem(this._storageId);
             if (!storedLogs)
                 return;
+            const { level, logs } = (0, helpers_1.getLogData)(args);
             const parsedLogs = JSON.parse(storedLogs);
             const key = this.formItemKey(level);
-            const message = logs.join(' ');
-            const time = new Date().toISOString();
-            parsedLogs[key] = JSON.stringify({ level, time, message });
+            parsedLogs[key] = (0, helpers_1.parseLog)(level, logs);
             this._setItem(this._storageId, JSON.stringify(parsedLogs));
         }
         catch (e) {

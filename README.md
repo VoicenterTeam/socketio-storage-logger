@@ -1,7 +1,7 @@
 # socketio-storage-logger
 `socketio-storage-logger` is a library that allows you to log data into the storage and periodically emit stored logs to the server using `socket.io-client` library functionality.
 
-By default it logs data to the **localstorage** but you can use your own storage by providing methods for getting and setting data to it. The only requirement is that these methods should be **synchronous**.
+By default it logs data to the **localstorage** but you can use your own storage by providing methods for getting and setting data to it. The only requirement is that these methods should be **synchronous** (For asynchronous see [AsyncStorageLogger](#usage-in-chrome-extension-project)).
 
 It also allows you to overload the global console logging methods (like `log`, `warn`, `error` etc.) the by passing appropriate property to the logger configuration.
 
@@ -94,11 +94,11 @@ First of all import AsyncStorageLogger:
 ```
 Then initialize logger socket and pass it into Logger options. Use `socketConnection` option instead of `socketUrl`
 ```
- import {StorageLogger} from "@voicenter-team/socketio-storage-logger/build/AsyncStorageLogger"
+ import {AsyncStorageLogger} from "@voicenter-team/socketio-storage-logger/build/AsyncStorageLogger"
 
  const loggerSocket = io(serverUrl, loggerConnectOptions)
  
- const logger = new StorageLogger({
+ const logger = new AsyncStorageLogger({
     socketConnection: loggerSocket,
     logToConsole: true,
     overloadGlobalConsole: false,
