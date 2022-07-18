@@ -1,6 +1,6 @@
 {
   "name": "@voicenter-team/socketio-storage-logger",
-  "version": "0.2.43",
+  "version": "0.2.44",
   "description": "Logger that allows you to save logged information into your storage and emit stored logs via socket.io",
   "main": "index.js",
   "scripts": {
