@@ -1,4 +1,4 @@
-export interface StorageLoggerConfig {
+export interface AsyncStorageLoggerConfig {
     /**
      * This defines if logger should contain default behavior like logging data to console.
      */
@@ -21,16 +21,6 @@ export interface StorageLoggerConfig {
     socketConnection: any;
 
     /**
-     * This defines the socket Url used for socket-io connection.
-     */
-    socketUrl: string;
-
-    /**
-     * This defines the options for socket connection.
-     */
-    connectOptions: object;
-
-    /**
      * This defines the interval for sending logs using sockets in milliseconds.
      */
     socketEmitInterval: number;
@@ -40,12 +30,12 @@ export interface StorageLoggerConfig {
      * It is useful if the custom storage is used for logs storage.
      * Function should be synchronous.
      */
-    getItem: (storage: string) => string;
+    getItem: (storage: string) => Promise<string | null>;
 
     /**
      * This defines the custom function for setting logs to storage.
      * It is useful if the custom storage is used for logs storage.
      * Function should be synchronous.
      */
-    setItem: (storage: string, logs: string) => void;
+    setItem: (storage: string, logs: string) => Promise<void>;
 }

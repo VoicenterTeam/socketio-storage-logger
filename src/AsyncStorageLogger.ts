@@ -1,31 +1,12 @@
-//import { io, Socket } from 'socket.io-client';
-// @ts-ignore
-//import io from "socket.io-client/dist/socket.io.js"
-import io from "socket.io-client"
-
 import CONFIG from './config/config'
-import { isPromise } from "./helpers/isPromise"
+import {isPromise} from "./helpers/isPromise"
 
-import {StorageLoggerConfig} from "./interfaces/StorageLoggerConfig"
+import {AsyncStorageLoggerConfig} from "./interfaces/AsyncStorageLoggerConfig"
 import {getLogData, getLogsToStore, parseLog} from "./helpers/helpers";
 
 let globalConsole = console
 
-const defaultConfig = {
-    socketUrl: "http://127.0.0.1:3000/",
-    connectOptions: {
-        reconnection: true,
-        reconnectionDelay: 5000,
-        reconnectionAttempts: 10,
-        perMessageDeflate: false,
-        upgrade: false,
-        transports: ['websocket'],
-        debug: false
-    },
-
-}
-
-export class StorageLogger {
+export class AsyncStorageLogger {
     private _logToConsole: boolean;
     private _overloadGlobalConsole: boolean;
     public namespace: string;
@@ -35,8 +16,8 @@ export class StorageLogger {
     private socket: any | undefined;
     private _interval: any;
     private _logIndex: number;
-    private _getItem: (storage: string) => string | null;
-    private _setItem: (storage: string, logs: string) => void;
+    private _getItem: (storage: string) => Promise<string | null>;
+    private _setItem: (storage: string, logs: string) => Promise<void>;
     private _logMethod: (...params: any[]) => void;
     private _warnMethod: (...params: any[]) => void;
     private _errorMethod: (...params: any[]) => void;
@@ -46,7 +27,7 @@ export class StorageLogger {
      * Initialize storage logger
      * @param config The configuration of the logger.
      */
-    constructor(config: StorageLoggerConfig) {
+    constructor(config: AsyncStorageLoggerConfig) {
         this.validateConfig(config)
         this._logToConsole = config.logToConsole ?? CONFIG.DEFAULT_LOG_TO_CONSOLE
         this._overloadGlobalConsole = config.overloadGlobalConsole ?? CONFIG.DEFAULT_OVERLOAD_CONSOLE
@@ -73,9 +54,9 @@ export class StorageLogger {
      * @param config The logger config.
      * @return void
      */
-    initLogger(config: StorageLoggerConfig) {
+    initLogger(config: AsyncStorageLoggerConfig) {
         this._initStorage()
-        this.initSocketConnection(config)
+        this.initSocketConnection(config.socketConnection)
 
         if (this._overloadGlobalConsole) {
             this._overloadConsole()
@@ -89,7 +70,7 @@ export class StorageLogger {
     async emitLogs(): Promise<any> {
         if (this._emitInProgress) return
         try {
-            const storedLogs = this._getItem(this._storageId)
+            const storedLogs = await this._getItem(this._storageId)
             if (!storedLogs) return
 
             let keysToReset = []
@@ -106,13 +87,13 @@ export class StorageLogger {
 
             // During emitting sockets new logs could be added
             // To ensure that newly added logs which were added during socket emits will not be lost
-            const logs = this._getItem(this._storageId)
+            const logs = await this._getItem(this._storageId)
             if (!logs) return
 
             const logsToStore = getLogsToStore(logs, keysToReset)
 
             // Update storage logs object after socket emits
-            this._setItem(this._storageId, JSON.stringify(logsToStore))
+            await this._setItem(this._storageId, JSON.stringify(logsToStore))
         } catch (err) {
             this._errorMethod(err)
         } finally {
@@ -125,19 +106,8 @@ export class StorageLogger {
      * @param socketUrl The url used for the socket connection.
      * @return void
      */
-    initSocketConnection(config: StorageLoggerConfig): void {
-        if (config.socketConnection) {
-            this.socket = config.socketConnection
-        } else {
-            const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl
-
-            const connectOptions = {
-                ...defaultConfig.connectOptions,
-                ...config.connectOptions
-            }
-
-            this.socket = io(connectUrl, connectOptions);
-        }
+    initSocketConnection(socketConnection: any): void {
+        this.socket = socketConnection
 
         this._interval = setInterval(async () => {
             await this.emitLogs()
@@ -184,11 +154,11 @@ export class StorageLogger {
      * Used to initialize the storage if it wasn't created before.
      * @return void
      */
-    _initStorage(): void {
-        const storedLogs = this._getItem(this._storageId)
+    async _initStorage(): Promise<void> {
+        const storedLogs = await this._getItem(this._storageId)
 
         if (!storedLogs || typeof storedLogs !== "string") {
-            this._setItem(this._storageId, JSON.stringify({}))
+            await this._setItem(this._storageId, JSON.stringify({}))
         }
     }
 
@@ -196,8 +166,8 @@ export class StorageLogger {
      * Reset log storage
      * @return void
      */
-    resetStorage(): void {
-        this._setItem(this._storageId, JSON.stringify({}))
+    async resetStorage(): Promise<void> {
+        await this._setItem(this._storageId, JSON.stringify({}))
     }
 
     /**
@@ -205,18 +175,22 @@ export class StorageLogger {
      * @param config The configuration of the logger.
      * @return void
      */
-    validateConfig(config: StorageLoggerConfig): void {
+    validateConfig(config: AsyncStorageLoggerConfig): void {
+        if (!config.socketConnection) {
+            throw new Error("Config property \"socketConnection\" should be provided!")
+        }
+
         if (!config.namespace) {
             throw new Error("Config property \"namespace\" should be provided!")
         }
 
         if (config.getItem && typeof config.getItem === 'function') {
             const res = config.getItem('')
-            if (isPromise(res)) throw new Error('getItem function should be synchronous!')
+            if (!isPromise(res)) throw new Error('getItem function should be asynchronous!')
         }
         if (config.setItem && typeof config.setItem === 'function') {
             const res = config.setItem('', '')
-            if (isPromise(res)) throw new Error('setItem function should be synchronous!')
+            if (!isPromise(res)) throw new Error('setItem function should be asynchronous!')
         }
     }
 
@@ -235,11 +209,11 @@ export class StorageLogger {
      * arguments are logs to be stored
      * @return void
      */
-    _processLog(...args: any[]): void {
+    async _processLog(...args: any[]): Promise<void> {
         try {
             if (args.length < 2) return
 
-            const storedLogs = this._getItem(this._storageId)
+            const storedLogs = await this._getItem(this._storageId)
             if (!storedLogs) return
 
             const {level, logs} = getLogData(args)
@@ -248,7 +222,7 @@ export class StorageLogger {
             const key = this.formItemKey(level)
 
             parsedLogs[key] = parseLog(level, logs)
-            this._setItem(this._storageId, JSON.stringify(parsedLogs))
+            await this._setItem(this._storageId, JSON.stringify(parsedLogs))
         } catch (e) {
             this._errorMethod(e)
         }
@@ -259,8 +233,8 @@ export class StorageLogger {
      * @param arguments The arguments to be logged.
      * @return void
      */
-    log(...args: any[]): void {
-        this._processLog("INFO", ...args)
+    async log(...args: any[]): Promise<void> {
+        await this._processLog("INFO", ...args)
         if (this._logToConsole) {
             this._logMethod.apply(globalConsole, args)
         }
@@ -271,8 +245,8 @@ export class StorageLogger {
      * @param arguments The arguments to be logged.
      * @return void
      */
-    warn(...args: any[]): void {
-        this._processLog("WARN", ...args)
+    async warn(...args: any[]): Promise<void> {
+        await this._processLog("WARN", ...args)
         if (this._logToConsole) {
             this._warnMethod.apply(globalConsole, args)
         }
@@ -283,8 +257,8 @@ export class StorageLogger {
      * @param arguments The arguments to be logged.
      * @return void
      */
-    error(...args: any[]): void {
-        this._processLog("ERROR", ...args)
+    async error(...args: any[]): Promise<void> {
+        await this._processLog("ERROR", ...args)
         if (this._logToConsole) {
             this._errorMethod.apply(globalConsole, args)
         }
@@ -295,8 +269,8 @@ export class StorageLogger {
      * @param arguments The arguments to be logged.
      * @return void
      */
-    debug(...args: any[]): void {
-        this._processLog("DEBUG", ...args)
+    async debug(...args: any[]): Promise<void> {
+        await this._processLog("DEBUG", ...args)
         if (this._logToConsole) {
             this._debugMethod.apply(globalConsole, args)
         }
@@ -307,8 +281,10 @@ export class StorageLogger {
      * @param storageId The identifier of storage where logs are stored.
      * @return string || null
      */
-    _getItemDefault(storageId: string): string | null {
-        return localStorage.getItem(storageId)
+    async _getItemDefault(storageId: string): Promise<string | null> {
+        // @ts-ignore
+        const results = await chrome.storage.local.get(storageId)
+        return results[storageId]
     }
 
     /**
@@ -317,9 +293,10 @@ export class StorageLogger {
      * @param logs The logs to be stored.
      * @return void
      */
-    _setItemDefault(storage: string, logs: string): void {
+    async _setItemDefault(storageId: string, logs: string): Promise<void> {
         try {
-            localStorage.setItem(storage, logs);
+            // @ts-ignore
+            await chrome.storage.local.set({[storageId]: logs})
         } catch (e) {
             this._errorMethod(e)
         }
