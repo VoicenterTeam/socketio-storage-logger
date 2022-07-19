@@ -16,6 +16,11 @@ export interface StorageLoggerConfig {
     namespace: string;
 
     /**
+     * This defines the initialized socket socket-io connection.
+     */
+    socketConnection: any;
+
+    /**
      * This defines the socket Url used for socket-io connection.
      */
     socketUrl: string;

@@ -126,14 +126,18 @@ export class StorageLogger {
      * @return void
      */
     initSocketConnection(config: StorageLoggerConfig): void {
-        const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl
+        if (config.socketConnection) {
+            this.socket = config.socketConnection
+        } else {
+            const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl
 
-        const connectOptions = {
-            ...defaultConfig.connectOptions,
-            ...config.connectOptions
+            const connectOptions = {
+                ...defaultConfig.connectOptions,
+                ...config.connectOptions
+            }
+
+            this.socket = io(connectUrl, connectOptions);
         }
-
-        this.socket = io(connectUrl, connectOptions);
 
         this._interval = setInterval(async () => {
             await this.emitLogs()

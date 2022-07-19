@@ -115,9 +115,14 @@ class StorageLogger {
      * @return void
      */
     initSocketConnection(config) {
-        const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl;
-        const connectOptions = Object.assign(Object.assign({}, defaultConfig.connectOptions), config.connectOptions);
-        this.socket = (0, socket_io_client_1.default)(connectUrl, connectOptions);
+        if (config.socketConnection) {
+            this.socket = config.socketConnection;
+        }
+        else {
+            const connectUrl = config.socketUrl ? config.socketUrl : defaultConfig.socketUrl;
+            const connectOptions = Object.assign(Object.assign({}, defaultConfig.connectOptions), config.connectOptions);
+            this.socket = (0, socket_io_client_1.default)(connectUrl, connectOptions);
+        }
         this._interval = setInterval(() => __awaiter(this, void 0, void 0, function* () {
             yield this.emitLogs();
         }), this.socketEmitInterval);
