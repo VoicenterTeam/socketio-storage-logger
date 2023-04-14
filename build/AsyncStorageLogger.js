@@ -34,6 +34,7 @@ class AsyncStorageLogger {
         this._logIndex = 0;
         this._getItem = config.getItem && typeof config.getItem === 'function' ? config.getItem : this._getItemDefault;
         this._setItem = config.setItem && typeof config.setItem === 'function' ? config.setItem : this._setItemDefault;
+        this._parseLog = config.parseLog && typeof config.parseLog === 'function' ? config.parseLog : helpers_1.parseLog;
         this._logMethod = globalConsole.log;
         this._warnMethod = globalConsole.warn;
         this._errorMethod = globalConsole.error;
@@ -208,7 +209,7 @@ class AsyncStorageLogger {
                 const { level, logs } = (0, helpers_1.getLogData)(args);
                 const parsedLogs = JSON.parse(storedLogs);
                 const key = this.formItemKey(level);
-                parsedLogs[key] = (0, helpers_1.parseLog)(level, logs);
+                parsedLogs[key] = this._parseLog(level, logs);
                 yield this._setItem(this._storageId, JSON.stringify(parsedLogs));
             }
             catch (e) {

@@ -23,6 +23,7 @@ Parameter | Description |
 `socketEmitInterval` | `number` **default: 60000**. This defines the interval for sending logs using sockets in milliseconds.
 `getItem` | `(storage: string) => string;`. This defines the custom function for getting logs from storage. Function should be synchronous.
 `setItem` | `(storage: string, logs: string) => void;`. This defines the custom function for setting logs to storage. Function should be synchronous.
+`parseLog` | `(level: string, logs: any[]) => string;`. This defines the custom function for parsing logs. Function should be synchronous.
 
 ## Usage
 
@@ -67,6 +68,12 @@ function setItem(storageId, logs) {
     store.put(storageId, logs);
 }
 
+function parseLog (level, logs) {
+    const message = logs.map(log => JSON.stringify(log)).join(' ')
+    const time = new Date().toISOString()
+    return JSON.stringify({ level, time, message })
+}
+
 const logger = new StorageLogger({
     socketUrl: "https://your-server-domain.com",
     logToConsole: true,
@@ -75,6 +82,7 @@ const logger = new StorageLogger({
     socketEmitInterval: 10000,
     getItem,
     setItem,
+    parseLog,
 })
 
 logger.log("Test log method")

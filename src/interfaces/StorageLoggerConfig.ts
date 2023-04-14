@@ -48,4 +48,10 @@ export interface StorageLoggerConfig {
      * Function should be synchronous.
      */
     setItem: (storage: string, logs: string) => void;
+
+    /**
+     * This defines the custom function for parsing logs.
+     * Function should be synchronous.
+     */
+    parseLog: (level: string, logs: any[]) => string;
 }

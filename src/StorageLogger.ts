@@ -37,6 +37,7 @@ export class StorageLogger {
     private _logIndex: number;
     private _getItem: (storage: string) => string | null;
     private _setItem: (storage: string, logs: string) => void;
+    private _parseLog: (level: string, logs: any[]) => string;
     private _logMethod: (...params: any[]) => void;
     private _warnMethod: (...params: any[]) => void;
     private _errorMethod: (...params: any[]) => void;
@@ -59,6 +60,7 @@ export class StorageLogger {
 
         this._getItem = config.getItem && typeof config.getItem === 'function' ? config.getItem : this._getItemDefault
         this._setItem = config.setItem && typeof config.setItem === 'function' ? config.setItem : this._setItemDefault
+        this._parseLog = config.parseLog && typeof config.parseLog === 'function' ? config.parseLog : parseLog
 
         this._logMethod = globalConsole.log;
         this._warnMethod = globalConsole.warn;
@@ -247,7 +249,7 @@ export class StorageLogger {
             const parsedLogs = JSON.parse(storedLogs)
             const key = this.formItemKey(level)
 
-            parsedLogs[key] = parseLog(level, logs)
+            parsedLogs[key] = this._parseLog(level, logs)
             this._setItem(this._storageId, JSON.stringify(parsedLogs))
         } catch (e) {
             this._errorMethod(e)
