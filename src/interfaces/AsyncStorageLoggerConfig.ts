@@ -38,4 +38,10 @@ export interface AsyncStorageLoggerConfig {
      * Function should be synchronous.
      */
     setItem: (storage: string, logs: string) => Promise<void>;
+
+    /**
+     * This defines the custom function for parsing logs.
+     * Function should be synchronous.
+     */
+    parseLog: (level: string, logs: any[]) => string;
 }
