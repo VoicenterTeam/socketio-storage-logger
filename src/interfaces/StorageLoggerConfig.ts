@@ -18,17 +18,17 @@ export interface StorageLoggerConfig {
     /**
      * This defines the initialized socket socket-io connection.
      */
-    socketConnection: any;
+    socketConnection?: any;
 
     /**
      * This defines the socket Url used for socket-io connection.
      */
-    socketUrl: string;
+    socketUrl?: string;
 
     /**
      * This defines the options for socket connection.
      */
-    connectOptions: object;
+    connectOptions?: object;
 
     /**
      * This defines the interval for sending logs using sockets in milliseconds.
@@ -40,18 +40,18 @@ export interface StorageLoggerConfig {
      * It is useful if the custom storage is used for logs storage.
      * Function should be synchronous.
      */
-    getItem: (storage: string) => string;
+    getItem?: (storage: string) => string;
 
     /**
      * This defines the custom function for setting logs to storage.
      * It is useful if the custom storage is used for logs storage.
      * Function should be synchronous.
      */
-    setItem: (storage: string, logs: string) => void;
+    setItem?: (storage: string, logs: string) => void;
 
     /**
      * This defines the custom function for parsing logs.
      * Function should be synchronous.
      */
-    parseLog: (level: string, logs: any[]) => string;
+    parseLog?: (level: string, logs: any[]) => string;
 }
