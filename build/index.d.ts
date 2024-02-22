@@ -1,17 +1,19 @@
-import { StorageLoggerConfig } from "./interfaces/StorageLoggerConfig";
+import { ConfigOptions } from "./types";
 export declare class StorageLogger {
-    private _logToConsole;
-    private _overloadGlobalConsole;
+    private logToConsole;
+    private overloadGlobalConsole;
     namespace: string;
     socketEmitInterval: number;
-    private _storageId;
-    private _emitInProgress;
+    private storageId;
+    private emitInProgress;
+    private queue;
+    private processing;
+    private interval;
+    private logIndex;
     private socket;
-    private _interval;
-    private _logIndex;
-    private _getItem;
-    private _setItem;
-    private _parseLog;
+    private getItem;
+    private setItem;
+    private parseLog;
     private _logMethod;
     private _warnMethod;
     private _errorMethod;
@@ -20,24 +22,26 @@ export declare class StorageLogger {
      * Initialize storage logger
      * @param config The configuration of the logger.
      */
-    constructor(config: StorageLoggerConfig);
+    constructor(options: ConfigOptions);
+    private setupStorageFunctions;
+    private promisifyStorageFunction;
     /**
      * Used to initialize logger. Initializes storage, establishes socket connection and overloads console if needed
      * @param config The logger config.
      * @return void
      */
-    initLogger(config: StorageLoggerConfig): void;
-    /**
-     * Emits stored logs to the server and clears the log storage in case the emit operation was successful
-     * @return {Promise<void>}
-     */
-    emitLogs(): Promise<any>;
+    private init;
     /**
      * Used to initialize new socket connection
      * @param socketUrl The url used for the socket connection.
      * @return void
      */
-    initSocketConnection(config: StorageLoggerConfig): void;
+    private createConnection;
+    /**
+     * Emits stored logs to the server and clears the log storage in case the emit operation was successful
+     * @return {Promise<void>}
+     */
+    private emitLogs;
     /**
      * Used to interrupt socket connection
      * @return void
@@ -47,23 +51,17 @@ export declare class StorageLogger {
      * Used to overload the global console object by logger methods.
      * @return void
      */
-    _overloadConsole(): void;
+    private _overloadConsole;
     /**
      * Used to initialize the storage if it wasn't created before.
      * @return void
      */
-    _initStorage(): void;
+    private initStorage;
     /**
      * Reset log storage
      * @return void
      */
-    resetStorage(): void;
-    /**
-     * Validate logger configuration parameters
-     * @param config The configuration of the logger.
-     * @return void
-     */
-    validateConfig(config: StorageLoggerConfig): void;
+    resetStorage(): Promise<void>;
     /**
      * Get storage name which is used to access the logs storage
      * @param suffix The custom suffix for the storage name.
@@ -76,7 +74,8 @@ export declare class StorageLogger {
      * arguments are logs to be stored
      * @return void
      */
-    _processLog(...args: any[]): void;
+    private processLog;
+    private processQueue;
     /**
      * Logs info data into the storage
      * @param arguments The arguments to be logged.
@@ -106,18 +105,18 @@ export declare class StorageLogger {
      * @param storageId The identifier of storage where logs are stored.
      * @return string || null
      */
-    _getItemDefault(storageId: string): string | null;
+    private defaultGetItemFunction;
     /**
      * The default method for setting logs into the storage
      * @param storageId The identifier of storage where to store the logs.
      * @param logs The logs to be stored.
      * @return void
      */
-    _setItemDefault(storage: string, logs: string): void;
+    private defaultSetItemFunction;
     /**
      * Used to form a key which will be used to store a log in the storage
      * @param level The log level. For example: Info, Warn, Error etc..
      * @return string
      */
-    formItemKey(level: string): string;
+    private formItemKey;
 }
