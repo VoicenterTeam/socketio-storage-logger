@@ -12,7 +12,7 @@ interface ErrorMethod {
     (message?: any, ...optionalParams: any[]): void;
 }
 
-export class StorageLogger {
+export default class StorageLogger {
     private logToConsole: boolean
     private overloadGlobalConsole: boolean
     public namespace: string

@@ -3,16 +3,12 @@
     "target": "ESNext",
     "module": "ESNext",
     "lib": ["ESNext"],
-    //"esModuleInterop": true,
     "moduleResolution": "Node",
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "strict": false,
     "skipLibCheck": true,
-    "outDir": "./build",
-    /*"types": [
-      ["socket.io-client"]
-    ]*/
+    "outDir": "./build"
   },
   "include": [
     "./src"

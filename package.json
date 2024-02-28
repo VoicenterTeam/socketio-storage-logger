@@ -1,6 +1,6 @@
 {
   "name": "@voicenter-team/socketio-storage-logger",
-  "version": "1.9.5",
+  "version": "1.9.7",
   "description": "Logger that allows you to save logged information into your storage and emit stored logs via socket.io",
   "main": "dist/storage-logger.cjs.js",
   "jsdelivr": "dist/storage-logger.umd.js",
@@ -24,6 +24,7 @@
     "vite-plugin-dts": "3.7.2"
   },
   "files": [
-    "dist"
+    "dist",
+    "src/types"
   ]
 }
