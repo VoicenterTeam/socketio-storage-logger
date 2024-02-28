@@ -1,10 +1,16 @@
 {
   "name": "@voicenter-team/socketio-storage-logger",
-  "version": "1.0.4",
+  "version": "1.9.5",
   "description": "Logger that allows you to save logged information into your storage and emit stored logs via socket.io",
-  "main": "index.js",
+  "main": "dist/storage-logger.cjs.js",
+  "jsdelivr": "dist/storage-logger.umd.js",
+  "module": "dist/storage-logger.es.js",
+  "unpkg": "dist/storage-logger.umd.js",
+  "types": "dist/storage-logger.d.ts",
+  "type": "module",
   "scripts": {
-    "build": "npx tsc"
+    "build": "vite build",
+    "tsc-build": "npx tsc"
   },
   "author": "Serhii Kundys",
   "license": "ISC",
@@ -13,11 +19,11 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.32",
-    "@types/socket.io-client": "^3.0.0",
-    "typescript": "^4.6.4"
+    "typescript": "5.3.3",
+    "vite": "5.0.12",
+    "vite-plugin-dts": "3.7.2"
   },
   "files": [
-    "index.js",
-    "build"
+    "dist"
   ]
 }

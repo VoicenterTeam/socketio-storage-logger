@@ -2,17 +2,17 @@ export interface ConfigOptions {
     /**
      * This defines the initialized socket socket-io connection.
      */
-    socket: any
+    socket?: any
 
     /**
      * This defines the socket connection url.
      */
-    url: string
+    url?: string
 
     /**
      * This defines initializing configuration options for socket-io connection.
      */
-    socketOptions: object
+    socketOptions?: object
 
     /**
      * This defines the configuration options for logger.
@@ -30,6 +30,8 @@ export type GetItemFunction = SyncGetItemFunction | AsyncGetItemFunction
 export type SetItemFunction = SyncSetItemFunction | AsyncSetItemFunction
 
 export type ParseLogFunction = (level: string, logs: any[]) => string
+
+export type ConsoleMethod = (this: Console, ...data: any[]) => void //{ (...data: any[]): void; (...data: any[]): void; (message?: any, ...optionalParams: any[]): void } | undefined
 
 export interface LoggerOptions {
     /**

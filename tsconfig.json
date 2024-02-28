@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
-    "target": "es2016",
-    "module": "commonjs",
-    "esModuleInterop": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext"],
+    //"esModuleInterop": true,
+    "moduleResolution": "Node",
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "strict": true,
+    "strict": false,
     "skipLibCheck": true,
-    "outDir": "./build"
+    "outDir": "./build",
+    /*"types": [
+      ["socket.io-client"]
+    ]*/
   },
   "include": [
     "./src"

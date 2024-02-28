@@ -1,10 +1,16 @@
 import io from 'socket.io-client'
 import { isPromise } from './helpers/isPromise'
 import { getLogData, removeLogsByKeys, parseLogDefault } from './helpers/helpers'
-import { ConfigOptions, GetItemFunction, SetItemFunction, ParseLogFunction } from "./types"
+import { ConfigOptions, GetItemFunction, SetItemFunction, ParseLogFunction, ConsoleMethod } from "./types/index"
 import { defaultConnectOptions, defaultLoggerOptions } from './enum'
 
+type AnyFunction = (...args: any[]) => any
+
 let globalConsole = console
+
+interface ErrorMethod {
+    (message?: any, ...optionalParams: any[]): void;
+}
 
 export class StorageLogger {
     private logToConsole: boolean
@@ -21,14 +27,14 @@ export class StorageLogger {
 
     private socket: any | undefined
 
-    private getItem: GetItemFunction
-    private setItem: SetItemFunction
-    private parseLog: (level: string, logs: any[]) => string
+    private getItem!: GetItemFunction
+    private setItem!: SetItemFunction
+    private parseLog!: ParseLogFunction
 
-    private _logMethod: (...params: any[]) => void
-    private _warnMethod: (...params: any[]) => void
-    private _errorMethod: (...params: any[]) => void
-    private _debugMethod: (...params: any[]) => void
+    private _logMethod!: ConsoleMethod
+    private _warnMethod!: ConsoleMethod
+    private _errorMethod!: ErrorMethod
+    private _debugMethod!: ConsoleMethod
 
     /**
      * Initialize storage logger
@@ -58,6 +64,13 @@ export class StorageLogger {
         this.init(options)
     }
 
+    /**
+     * Used to setup storage functions and logs parser function.
+     * @param getItemFunction Function for getting item from storage.
+     * @param setItemFunction Function for setting item to storage.
+     * @param parseLogFunction Function for parsing logs.
+     * @return void
+     */
     private setupStorageFunctions (
         getItemFunction?: GetItemFunction,
         setItemFunction?: SetItemFunction,
@@ -79,26 +92,29 @@ export class StorageLogger {
                 parseLogDefault
     }
 
-    private promisifyStorageFunction (f) {
-        if (f && typeof f === 'function') {
-            const result = f('')
-            const isSync = !isPromise(result)
+    /**
+     * Used to promisify storage function in case they are synchronous,
+     * @param f The function to promisify.
+     * @return f promisified function
+     */
+    private promisifyStorageFunction (f: AnyFunction): AnyFunction {
+        const result = f('')
+        const isSync = !isPromise(result)
 
-            if (isSync) {
-                return async (...args) => {
-                    return new Promise((resolve, reject) => {
-                        try {
-                            const data = f(...args)
-                            resolve(data)
-                        } catch (err) {
-                            reject(err)
-                        }
-                    })
-                }
+        if (isSync) {
+            return async (...args: any[]) => {
+                return new Promise((resolve, reject) => {
+                    try {
+                        const data = f(...args)
+                        resolve(data)
+                    } catch (err) {
+                        reject(err)
+                    }
+                })
             }
-
-            return f
         }
+
+        return f
     }
 
     /**
@@ -109,10 +125,10 @@ export class StorageLogger {
     private init(options: ConfigOptions) {
         const { socket, url, socketOptions = {} } = options
 
-        this._logMethod = globalConsole.log
-        this._warnMethod = globalConsole.warn
-        this._errorMethod = globalConsole.error
-        this._debugMethod = globalConsole.debug
+        this._logMethod = globalConsole.log.bind(globalConsole)//globalConsole.log
+        this._warnMethod = globalConsole.warn.bind(globalConsole)//globalConsole.warn
+        this._errorMethod = globalConsole.error.bind(globalConsole) as ErrorMethod/*(...args: any[]) => console.error(...args)*///(...args: any[]) => globalConsole.error(...args)//globalConsole.error
+        this._debugMethod = globalConsole.debug.bind(globalConsole)//globalConsole.debug
 
         this.initStorage().then(() => {
             if (socket) {
@@ -247,7 +263,7 @@ export class StorageLogger {
      * @param suffix The custom suffix for the storage name.
      * @return string
      */
-    public getStorageName(suffix: string = "_LOGGER_"): string {
+    private getStorageName(suffix: string = "_LOGGER_"): string {
         return this.namespace.toString().toUpperCase() + suffix + Date.now()
     }
 
@@ -276,6 +292,10 @@ export class StorageLogger {
         }
     }
 
+    /**
+     * Used to process logs queue.
+     * @return Promise<void>
+     */
     private async processQueue() {
         // TODO update condition to return also when the logs are emitted to the sockets
         if (this.processing || this.queue.length === 0) {
@@ -285,7 +305,7 @@ export class StorageLogger {
         this.processing = true
         const data = this.queue.shift()
 
-        await this.processLog(data)
+        await this.processLog(...data)
             .finally(() => {
                 this.processing = false
                 this.processQueue()
@@ -355,9 +375,6 @@ export class StorageLogger {
      */
     private async defaultGetItemFunction (storageId: string): Promise<string | null> {
         return localStorage.getItem(storageId)
-        // @ts-ignore
-        /*const results = await chrome.storage.local.get(storageId)
-        return results[storageId]*/
     }
 
     /**
@@ -372,12 +389,6 @@ export class StorageLogger {
         } catch (e) {
             this._errorMethod(e)
         }
-        /*try {
-            // @ts-ignore
-            await chrome.storage.local.set({[storageId]: logs})
-        } catch (e) {
-            this._errorMethod(e)
-        }*/
     }
 
     /**
