@@ -51,8 +51,14 @@ export default class StorageLogger {
 
         this.namespace = loggerOptions.namespace
         this.socketEmitInterval = loggerOptions.socketEmitInterval || defaultLoggerOptions.socketEmitInterval
-        this.logToConsole = loggerOptions.logToConsole ?? defaultLoggerOptions.logToConsole
-        this.overloadGlobalConsole = loggerOptions.overloadGlobalConsole ?? defaultLoggerOptions.overloadGlobalConsole
+        this.logToConsole =
+            loggerOptions.logToConsole !== undefined ?
+                loggerOptions.logToConsole :
+                defaultLoggerOptions.logToConsole
+        this.overloadGlobalConsole =
+            loggerOptions.overloadGlobalConsole !== undefined ?
+                loggerOptions.overloadGlobalConsole :
+                defaultLoggerOptions.overloadGlobalConsole
 
         this.storageId = this.getStorageName(loggerOptions.namespace)
 
