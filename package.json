@@ -1,6 +1,6 @@
 {
   "name": "@voicenter-team/socketio-storage-logger",
-  "version": "1.9.8",
+  "version": "1.9.10",
   "description": "Logger that allows you to save logged information into your storage and emit stored logs via socket.io",
   "main": "dist/storage-logger.cjs.js",
   "jsdelivr": "dist/storage-logger.umd.js",
@@ -15,7 +15,8 @@
   "author": "Serhii Kundys",
   "license": "ISC",
   "dependencies": {
-    "socket.io-client": "^2.3.0"
+    "socket.io-client": "^2.3.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/node": "^17.0.32",
