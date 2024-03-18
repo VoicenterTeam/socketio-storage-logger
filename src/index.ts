@@ -1,4 +1,5 @@
 import io from 'socket.io-client'
+import { v4 as uuidv4 } from 'uuid'
 import { isPromise } from './helpers/isPromise'
 import { getLogData, removeLogsByKeys, parseLogDefault } from './helpers/helpers'
 import { ConfigOptions, GetItemFunction, SetItemFunction, ParseLogFunction, ConsoleMethod } from "./types/index"
@@ -60,7 +61,7 @@ export default class StorageLogger {
                 loggerOptions.overloadGlobalConsole :
                 defaultLoggerOptions.overloadGlobalConsole
 
-        this.storageId = this.getStorageName(loggerOptions.namespace)
+        this.storageId = this.getStorageName()
 
         this.queue = []
         this.processing = false
@@ -269,8 +270,9 @@ export default class StorageLogger {
      * @param suffix The custom suffix for the storage name.
      * @return string
      */
-    private getStorageName(suffix: string = "_LOGGER_"): string {
-        return this.namespace.toString().toUpperCase() + suffix + Date.now()
+    private getStorageName(): string {
+        const randomId = uuidv4()
+        return this.namespace.toString().toUpperCase() + randomId + Date.now()
     }
 
     /**
