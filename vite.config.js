@@ -1,5 +1,5 @@
-import {defineConfig} from 'vite'
-import {resolve} from 'path'
+import { defineConfig } from 'vite'
+import { resolve } from 'path'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig({
@@ -16,7 +16,7 @@ export default defineConfig({
         },
         lib: {
             entry: resolve(__dirname, 'src/index.ts'),
-            formats: ['es', 'cjs', 'umd', 'iife'],
+            formats: [ 'es', 'cjs', 'umd', 'iife' ],
             name: 'StorageLogger',
             fileName: (format) => {
                 return `storage-logger.${format}.js`

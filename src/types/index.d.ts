@@ -1,8 +1,10 @@
+import { Socket } from 'socket.io-client'
+
 export interface ConfigOptions {
     /**
      * This defines the initialized socket socket-io connection.
      */
-    socket?: any
+    socket?: Socket
 
     /**
      * This defines the socket connection url.
@@ -29,9 +31,9 @@ export type AsyncSetItemFunction = (storage: string, logs: string) => Promise<vo
 export type GetItemFunction = SyncGetItemFunction | AsyncGetItemFunction
 export type SetItemFunction = SyncSetItemFunction | AsyncSetItemFunction
 
-export type ParseLogFunction = (level: string, logs: any[]) => string
+export type ParseLogFunction = (level: string, logs: unknown[]) => string
 
-export type ConsoleMethod = (this: Console, ...data: any[]) => void //{ (...data: any[]): void; (...data: any[]): void; (message?: any, ...optionalParams: any[]): void } | undefined
+export type ConsoleMethod = (this: Console, ...data: unknown[]) => void //{ (...data: any[]): void; (...data: any[]): void; (message?: any, ...optionalParams: any[]): void } | undefined
 
 export interface LoggerOptions {
     /**
