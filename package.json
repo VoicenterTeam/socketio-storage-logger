@@ -12,7 +12,7 @@
   "scripts": {
     "build": "vite build",
     "ts-check": "tsc --noEmit",
-    "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts --fix --ignore-path .gitignore",
+    "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts --fix --ignore-path .gitignore"
   },
   "author": "Serhii Kundys",
   "license": "ISC",
