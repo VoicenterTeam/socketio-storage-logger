@@ -8,11 +8,11 @@
   "unpkg": "dist/storage-logger.umd.js",
   "types": "dist/storage-logger.d.ts",
   "type": "module",
+  "precommit": "ts-check, lint",
   "scripts": {
     "build": "vite build",
     "ts-check": "tsc --noEmit",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts --fix --ignore-path .gitignore",
-    "precommit": "ts-check, lint"
   },
   "author": "Serhii Kundys",
   "license": "ISC",
