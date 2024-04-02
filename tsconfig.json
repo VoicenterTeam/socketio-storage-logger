@@ -15,8 +15,7 @@
     ],
     "types": [
       "vite/client",
-      "node",
-      "chrome"
+      "node"
     ],
     "declaration": true, /* Generates corresponding '.d.ts' file. */
     "esModuleInterop": true,
