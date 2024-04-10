@@ -1,7 +1,7 @@
 import io from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
 import { isPromise } from './helpers/isPromise'
-import { getLogData, removeLogsByKeys, parseLogDefault } from './helpers/helpers'
+import {getLogData, removeLogsByKeys, parseLogDefault, parseLogObject, getOSString} from './helpers/helpers'
 import { ConfigOptions, GetItemFunction, SetItemFunction, ParseLogFunction, ConsoleMethod } from "./types/index"
 import { defaultConnectOptions, defaultLoggerOptions } from './enum'
 
@@ -27,6 +27,8 @@ export default class StorageLogger {
     private logIndex: number
 
     private socket: any | undefined
+
+    private staticObject: { [key: string]: unknown } = {}
 
     private getItem!: GetItemFunction
     private setItem!: SetItemFunction
@@ -189,7 +191,15 @@ export default class StorageLogger {
             if (!this.socket || !this.socket.connected) throw new Error("Socket is disconnected")
 
             for (const key of keys) {
-                await this.socket.emit("Log", parsedLogs[key]); // logs only value
+                const parsedObject = parseLogObject(parsedLogs[key])
+                const additionalParams = this.populateMetaData()
+                const sendingLog = {
+                    ...additionalParams,
+                    ...this.staticObject,
+                    ...parsedObject,
+                }
+
+                await this.socket.emit("Log", JSON.stringify(sendingLog)); // logs only value
                 keysToReset.push(key)
             }
 
@@ -209,6 +219,39 @@ export default class StorageLogger {
         }
     }
 
+    /**
+     * Used to set a static object which will be send in every message
+     * @return void
+     */
+    public setupStaticFields(data: { [key: string]: unknown }): void {
+        this.staticObject = { ...data }
+    }
+
+    /**
+     * Used to populate sending message object with static client parameters
+     * @return object
+     */
+    private populateMetaData() {
+        const DateTime = new Date().toString()
+
+        let UserAgent
+        if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+            UserAgent = window?.navigator.userAgent
+        } else if (typeof self !== 'undefined' && self.navigator) {
+            UserAgent = self.navigator.userAgent
+        }
+
+        let OSVersion
+        if (UserAgent) {
+            OSVersion = getOSString(UserAgent)
+        }
+
+        return {
+            DateTime,
+            UserAgent,
+            OSVersion
+        }
+    }
     /**
      * Used to interrupt socket connection
      * @return void
