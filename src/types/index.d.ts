@@ -58,6 +58,16 @@ export interface LoggerOptions {
     socketEmitInterval: number
 
     /**
+     * This defines the custom function for getting logs from storage is async
+     */
+    isGetItemAsync?: boolean
+
+    /**
+     * This defines the custom function for setting logs to storage is async
+     */
+    isSetItemAsync?: boolean
+
+    /**
      * This defines the custom function for getting logs from storage.
      * It is useful if the custom storage is used for logs storage.
      * Function should be synchronous.

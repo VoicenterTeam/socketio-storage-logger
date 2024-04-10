@@ -1,11 +1,16 @@
 import io, { Socket } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
-import { isPromise } from './helpers/isPromise'
+import { promisify } from './helpers/helpers'
 import { getLogData, removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
-import { ConfigOptions, GetItemFunction, SetItemFunction, ParseLogFunction, ConsoleMethod } from './types'
+import {
+    ConfigOptions,
+    GetItemFunction,
+    SetItemFunction,
+    ParseLogFunction,
+    ConsoleMethod,
+    SyncGetItemFunction
+} from './types'
 import { defaultConnectOptions, defaultLoggerOptions } from './enum'
-
-type AnyFunction = (...args: unknown[]) => unknown
 
 let globalConsole = console
 
@@ -30,6 +35,9 @@ export default class StorageLogger{
 
     private staticObject: { [key: string]: unknown } = {}
 
+    private readonly isGetItemAsync: boolean
+    private readonly isSetItemAsync: boolean
+
     private getItem!: GetItemFunction
     private setItem!: SetItemFunction
     private parseLog!: ParseLogFunction
@@ -50,6 +58,8 @@ export default class StorageLogger{
             throw new Error('Config property \'namespace\' should be provided!')
         }
 
+        this.isGetItemAsync = loggerOptions.isGetItemAsync || false
+        this.isSetItemAsync = loggerOptions.isSetItemAsync || false
         this.setupStorageFunctions(loggerOptions.getItem, loggerOptions.setItem, loggerOptions.parseLog)
 
         this.namespace = loggerOptions.namespace
@@ -87,42 +97,18 @@ export default class StorageLogger{
     ) {
         this.getItem =
             getItemFunction && typeof getItemFunction === 'function'
-                ? this.promisifyStorageFunction(getItemFunction)
+                ? this.isGetItemAsync ? getItemFunction : promisify(getItemFunction as SyncGetItemFunction)
                 : this.defaultGetItemFunction
 
         this.setItem =
             setItemFunction && typeof setItemFunction === 'function'
-                ? this.promisifyStorageFunction(setItemFunction)
+                ? this.isSetItemAsync ? setItemFunction : promisify(setItemFunction)
                 : this.defaultSetItemFunction
 
         this.parseLog =
             parseLogFunction && typeof parseLogFunction === 'function'
                 ? parseLogFunction
                 : parseLogDefault
-    }
-
-    /**
-     * Used to promisify storage function in case they are synchronous,
-     * @param f The function to promisify.
-     * @return f promisified function
-     */
-    private promisifyStorageFunction (f: AnyFunction): AnyFunction {
-        const result = f('')
-
-        if (isPromise(result)) {
-            return async (...args: unknown[]) => {
-                return new Promise((resolve, reject) => {
-                    try {
-                        const data = f(...args)
-                        resolve(data)
-                    } catch (err) {
-                        reject(err)
-                    }
-                })
-            }
-        }
-
-        return f
     }
 
     /**

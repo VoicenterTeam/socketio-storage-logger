@@ -24,19 +24,19 @@ export function removeLogsByKeys (logs: string, keysToReset: string[]) {
     return allLogs
 }
 
-export function parseLogObject(value) {
+export function parseLogObject(value: unknown) {
     if (typeof value === 'object' && value !== null) {
         return value
     }
 
     try {
-        return JSON.parse(value);
+        return JSON.parse(value as string);
     } catch (error) {
         return { extraData: value };
     }
 }
 
-export function getOSString(userAgent) {
+export function getOSString(userAgent: string) {
     const osRegex = /\(([^)]+)\)/; // Matches text within parentheses
     const match = userAgent.match(osRegex);
     if (match && match[1]) {
@@ -49,4 +49,17 @@ export function getOSString(userAgent) {
         }
     }
     return 'Unknown';
+}
+
+export function promisify<T, A extends any[]>(func: (...args: A) => T): (...args: A) => Promise<T> {
+    return (...args: A): Promise<T> => {
+    return new Promise((resolve, reject) => {
+        try {
+            const result = func(...args);
+            resolve(result);
+        } catch (error) {
+            reject(error);
+        }
+    });
+};
 }
