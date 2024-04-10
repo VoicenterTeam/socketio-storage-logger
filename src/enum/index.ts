@@ -4,7 +4,7 @@ export const defaultConnectOptions = {
     reconnectionAttempts: 10,
     //perMessageDeflate: false,
     upgrade: false,
-    transports: ['websocket'],
+    transports: [ 'websocket' ],
     debug: false
 }
 
