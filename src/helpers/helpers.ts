@@ -51,7 +51,7 @@ export function getOSString(userAgent: string) {
     return 'Unknown';
 }
 
-export function promisify<T, A extends any[]>(func: (...args: A) => T): (...args: A) => Promise<T> {
+export function promisify<T, A extends unknown[]>(func: (...args: A) => T): (...args: A) => Promise<T> {
     return (...args: A): Promise<T> => {
     return new Promise((resolve, reject) => {
         try {
