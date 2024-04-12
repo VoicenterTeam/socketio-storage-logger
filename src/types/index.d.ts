@@ -33,7 +33,7 @@ export type SetItemFunction = SyncSetItemFunction | AsyncSetItemFunction
 
 export type ParseLogFunction = (level: string, logs: unknown[]) => string
 
-export type ConsoleMethod = (this: Console, ...data: unknown[]) => void //{ (...data: any[]): void; (...data: any[]): void; (message?: any, ...optionalParams: any[]): void } | undefined
+export type ConsoleMethod<T> = (this: Console, ...data: Array<T>) => void //{ (...data: any[]): void; (...data: any[]): void; (message?: any, ...optionalParams: any[]): void } | undefined
 
 export interface LoggerOptions {
     /**
@@ -47,15 +47,25 @@ export interface LoggerOptions {
     overloadGlobalConsole: boolean
 
     /**
-     * This defines the namespace for the storage key.
+     * This defines the system namespace for the storage key.
      * This value should be unique across the projects.
      */
-    namespace: string
+    system: string
 
     /**
      * This defines the interval for sending logs using sockets in milliseconds.
      */
     socketEmitInterval: number
+
+    /**
+     * This defines the custom function for getting logs from storage is async
+     */
+    isGetItemAsync?: boolean
+
+    /**
+     * This defines the custom function for setting logs to storage is async
+     */
+    isSetItemAsync?: boolean
 
     /**
      * This defines the custom function for getting logs from storage.
@@ -77,3 +87,46 @@ export interface LoggerOptions {
      */
     parseLog?: ParseLogFunction
 }
+
+export interface LoggerBaseData {
+    DateTime: Date
+    System: string
+    UserAgent?: string
+    OSVersion?: string
+}
+
+export interface LoggerMainParameters {
+    Subsystem: string
+    TopDistributorID?: string
+    IdentityType?: string
+    IdentityID?: string
+    IdentityName: string
+    EntityID?: string
+    EntityType?: string
+    Message: string
+    ActionName?: string
+    isShowClient?: boolean
+    Status?: string
+    StatusCode?: number
+    RequestID?: string
+    LogType?: string
+    Level?: string
+    ForwardedIP?: string
+    DestinationIP?: string
+    Host?: string
+    ServerName?: string
+    Body?: string
+    ActionID?: number
+    Version?: string
+    MachineName?: string
+    SIPUser?: string
+    Response?: string
+    Method?: string
+    Topic?: string
+}
+
+export type MainParametersPartial = Partial<LoggerMainParameters>
+
+export type LoggerData = LoggerBaseData & LoggerMainParameters
+
+export type LoggerDataPartial = Partial<LoggerData>

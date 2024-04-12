@@ -1,22 +1,30 @@
 import io, { Socket } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
-import { isPromise } from './helpers/isPromise'
-import { getLogData, removeLogsByKeys, parseLogDefault } from './helpers/helpers'
-import { ConfigOptions, GetItemFunction, SetItemFunction, ParseLogFunction, ConsoleMethod } from './types'
+import { promisify } from './helpers/helpers'
+import { getLogData, removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
+import {
+    ConfigOptions,
+    GetItemFunction,
+    SetItemFunction,
+    ParseLogFunction,
+    ConsoleMethod,
+    SyncGetItemFunction,
+    LoggerData,
+    LoggerBaseData,
+    LoggerDataPartial
+} from './types'
 import { defaultConnectOptions, defaultLoggerOptions } from './enum'
-
-type AnyFunction = (...args: unknown[]) => unknown
 
 let globalConsole = console
 
-interface ErrorMethod {
-    (message?: unknown, ...optionalParams: unknown[]): void
+interface ErrorMethod<T> {
+    (message?: T | unknown, ...optionalParams: T[] | unknown[]): void
 }
 
-export default class StorageLogger{
+export default class StorageLogger<DataType = unknown>{
     private readonly logToConsole: boolean
     private readonly overloadGlobalConsole: boolean
-    public namespace: string
+    public system: string
     public socketEmitInterval: number
     private readonly storageId: string
 
@@ -28,14 +36,19 @@ export default class StorageLogger{
 
     private socket: Socket | undefined
 
+    private staticObject: LoggerDataPartial = {}
+
+    private readonly isGetItemAsync: boolean
+    private readonly isSetItemAsync: boolean
+
     private getItem!: GetItemFunction
     private setItem!: SetItemFunction
     private parseLog!: ParseLogFunction
 
-    private _logMethod!: ConsoleMethod
-    private _warnMethod!: ConsoleMethod
-    private _errorMethod!: ErrorMethod
-    private _debugMethod!: ConsoleMethod
+    private _logMethod!: ConsoleMethod<DataType>
+    private _warnMethod!: ConsoleMethod<DataType>
+    private _errorMethod!: ErrorMethod<DataType>
+    private _debugMethod!: ConsoleMethod<DataType>
 
     /**
      * Initialize storage logger
@@ -44,13 +57,15 @@ export default class StorageLogger{
     constructor (options: ConfigOptions) {
         const { loggerOptions } = options
 
-        if (!loggerOptions.namespace) {
-            throw new Error('Config property \'namespace\' should be provided!')
+        if (!loggerOptions.system) {
+            throw new Error('Config property \'system\' should be provided!')
         }
 
+        this.isGetItemAsync = loggerOptions.isGetItemAsync || false
+        this.isSetItemAsync = loggerOptions.isSetItemAsync || false
         this.setupStorageFunctions(loggerOptions.getItem, loggerOptions.setItem, loggerOptions.parseLog)
 
-        this.namespace = loggerOptions.namespace
+        this.system = loggerOptions.system
         this.socketEmitInterval = loggerOptions.socketEmitInterval || defaultLoggerOptions.socketEmitInterval
         this.logToConsole =
             loggerOptions.logToConsole !== undefined ?
@@ -85,42 +100,18 @@ export default class StorageLogger{
     ) {
         this.getItem =
             getItemFunction && typeof getItemFunction === 'function'
-                ? this.promisifyStorageFunction(getItemFunction)
+                ? this.isGetItemAsync ? getItemFunction : promisify(getItemFunction as SyncGetItemFunction)
                 : this.defaultGetItemFunction
 
         this.setItem =
             setItemFunction && typeof setItemFunction === 'function'
-                ? this.promisifyStorageFunction(setItemFunction)
+                ? this.isSetItemAsync ? setItemFunction : promisify(setItemFunction)
                 : this.defaultSetItemFunction
 
         this.parseLog =
             parseLogFunction && typeof parseLogFunction === 'function'
                 ? parseLogFunction
                 : parseLogDefault
-    }
-
-    /**
-     * Used to promisify storage function in case they are synchronous,
-     * @param f The function to promisify.
-     * @return f promisified function
-     */
-    private promisifyStorageFunction (f: AnyFunction): AnyFunction {
-        const result = f('')
-
-        if (isPromise(result)) {
-            return async (...args: unknown[]) => {
-                return new Promise((resolve, reject) => {
-                    try {
-                        const data = f(...args)
-                        resolve(data)
-                    } catch (err) {
-                        reject(err)
-                    }
-                })
-            }
-        }
-
-        return f
     }
 
     /**
@@ -133,7 +124,7 @@ export default class StorageLogger{
 
         this._logMethod = globalConsole.log.bind(globalConsole)//globalConsole.log
         this._warnMethod = globalConsole.warn.bind(globalConsole)//globalConsole.warn
-        this._errorMethod = globalConsole.error.bind(globalConsole) as ErrorMethod/*(...args: any[]) => console.error(...args)*///(...args: any[]) => globalConsole.error(...args)//globalConsole.error
+        this._errorMethod = globalConsole.error.bind(globalConsole) as ErrorMethod<DataType>/*(...args: any[]) => console.error(...args)*///(...args: any[]) => globalConsole.error(...args)//globalConsole.error
         this._debugMethod = globalConsole.debug.bind(globalConsole)//globalConsole.debug
 
         this.initStorage().then(() => {
@@ -189,7 +180,14 @@ export default class StorageLogger{
             if (!this.socket || !this.socket.connected) throw new Error('Socket is disconnected')
 
             for (const key of keys) {
-                this.socket.emit('Log', parsedLogs[key]) // logs only value
+                const parsedObject = parseLogObject(parsedLogs[key])
+                const additionalParams: LoggerBaseData = this.populateMetaData()
+                const sendingLog: LoggerData = {
+                    ...additionalParams,
+                    ...this.staticObject,
+                    ...parsedObject,
+                }
+                await this.socket.emit("Log", JSON.stringify(sendingLog)) // logs only value
                 keysToReset.push(key)
             }
 
@@ -211,6 +209,38 @@ export default class StorageLogger{
     }
 
     /**
+     /**
+     * Used to set a static object which will be send in every message
+     * @return void
+     */
+    public setupStaticFields(data: LoggerDataPartial) {
+        this.staticObject = { ...data }
+    }
+    /**
+     * Used to populate sending message object with static client parameters
+     * @return object
+     */
+    private populateMetaData(): LoggerBaseData {
+        const DateTime = new Date()
+        let UserAgent
+        if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+            UserAgent = window?.navigator.userAgent
+        } else if (typeof self !== 'undefined' && self.navigator) {
+            UserAgent = self.navigator.userAgent
+        }
+        let OSVersion
+        if (UserAgent) {
+            OSVersion = getOSString(UserAgent)
+        }
+        return {
+            System: this.system,
+            DateTime,
+            UserAgent,
+            OSVersion
+        }
+    }
+
+    /**
      * Used to interrupt socket connection
      * @return void
      */
@@ -228,17 +258,17 @@ export default class StorageLogger{
         globalConsole = Object.assign(
             globalConsole,
             {
-                log: (...args: unknown[]) => {
-                    this.log(...args)
+                log: (arg: DataType) => {
+                    this.log(arg)
                 },
-                warn: (...args: unknown[]) => {
-                    this.warn(...args)
+                warn: (arg: DataType) => {
+                    this.warn(arg)
                 },
-                error: (...args: unknown[]) => {
-                    this.error(...args)
+                error: (arg: DataType) => {
+                    this.error(arg)
                 },
-                debug: (...args: unknown[]) => {
-                    this.debug(...args)
+                debug: (arg: DataType) => {
+                    this.debug(arg)
                 }
             }
         )
@@ -270,7 +300,7 @@ export default class StorageLogger{
      */
     private getStorageName (): string {
         const randomId = uuidv4()
-        return this.namespace.toString().toUpperCase() + randomId + Date.now()
+        return this.system.toString().toUpperCase() + randomId + Date.now()
     }
 
     /**
@@ -328,11 +358,11 @@ export default class StorageLogger{
      * @param args The arguments to be logged.
      * @return void
      */
-    public log (...args: unknown[]): void {
-        const data = [ 'INFO', ...args ]
+    public log (logData: DataType): void {
+        const data = [ 'INFO', logData ]
         this.queue.push(data)
         if (this.logToConsole) {
-            this._logMethod.apply(globalConsole, args)
+            this._logMethod.apply(globalConsole, [ logData ])
         }
         this.processQueue()
     }
@@ -342,12 +372,12 @@ export default class StorageLogger{
      * @param args The arguments to be logged.
      * @return void
      */
-    public warn (...args: unknown[]): void {
-        const data = [ 'WARN', ...args ]
+    public warn (logData: DataType): void {
+        const data = [ 'WARN', logData ]
         this.queue.push(data)
 
         if (this.logToConsole) {
-            this._warnMethod.apply(globalConsole, args)
+            this._warnMethod.apply(globalConsole, [ logData ])
         }
 
         this.processQueue()
@@ -358,12 +388,12 @@ export default class StorageLogger{
      * @param args The arguments to be logged.
      * @return void
      */
-    public error (...args: unknown[]): void {
-        const data = [ 'ERROR', ...args ]
+    public error (logData: DataType): void {
+        const data = [ 'ERROR', logData ]
         this.queue.push(data)
 
         if (this.logToConsole) {
-            this._errorMethod.apply(globalConsole, args)
+            this._errorMethod.apply(globalConsole, [ logData ])
         }
 
         this.processQueue()
@@ -374,12 +404,12 @@ export default class StorageLogger{
      * @param args The arguments to be logged.
      * @return void
      */
-    public debug (...args: unknown[]): void {
-        const data = [ 'DEBUG', ...args ]
+    public debug (logData: DataType): void {
+        const data = [ 'DEBUG', logData ]
         this.queue.push(data)
 
         if (this.logToConsole) {
-            this._debugMethod.apply(globalConsole, args)
+            this._debugMethod.apply(globalConsole, [ logData ])
         }
 
         this.processQueue()
@@ -418,6 +448,6 @@ export default class StorageLogger{
 
         this.logIndex++
 
-        return `${level}-${this.namespace}-${date}-${this.logIndex}`
+        return `${level}-${this.system}-${date}-${this.logIndex}`
     }
 }
