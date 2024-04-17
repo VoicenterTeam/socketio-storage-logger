@@ -1,4 +1,25 @@
 import { Socket } from 'socket.io-client'
+import {
+    LevelEnum,
+    LogTypeEnum,
+    ActionNameEnum,
+    ActionIDEnum,
+    EntityTypeEnum,
+    EntityIDEnum,
+    IdentityNameEnum,
+    IdentityTypeEnum,
+    IdentityIDEnum
+} from '../enum'
+
+export type Level = typeof LevelEnum[keyof typeof LevelEnum]
+export type LogType = typeof LogTypeEnum[keyof typeof LogTypeEnum]
+export type ActionName = typeof ActionNameEnum[keyof typeof ActionNameEnum]
+export type ActionID = typeof ActionIDEnum[keyof typeof ActionIDEnum]
+export type EntityType = typeof EntityTypeEnum[keyof typeof EntityTypeEnum]
+export type EntityID = typeof EntityIDEnum[keyof typeof EntityIDEnum]
+export type IdentityName = typeof IdentityNameEnum[keyof typeof IdentityNameEnum]
+export type IdentityType = typeof IdentityTypeEnum[keyof typeof IdentityTypeEnum]
+export type IdentityID = typeof IdentityIDEnum[keyof typeof IdentityIDEnum]
 
 export interface ConfigOptions {
     /**
@@ -98,25 +119,25 @@ export interface LoggerBaseData {
 export interface LoggerMainParameters {
     Subsystem: string
     TopDistributorID?: string
-    IdentityType?: string
-    IdentityID?: string
-    IdentityName: string
-    EntityID?: string
-    EntityType?: string
+    IdentityType?: IdentityType
+    IdentityID?: IdentityID
+    IdentityName: IdentityName
+    EntityID?: EntityID
+    EntityType?: EntityType
     Message: string
-    ActionName?: string
+    ActionName?: ActionName
     isShowClient?: boolean
     Status?: string
     StatusCode?: number
     RequestID?: string
-    LogType?: string
-    Level?: string
+    LogType?: LogType
+    Level?: Level
     ForwardedIP?: string
     DestinationIP?: string
     Host?: string
     ServerName?: string
     Body?: string
-    ActionID?: number
+    ActionID?: ActionID
     Version?: string
     MachineName?: string
     SIPUser?: string
