@@ -3,7 +3,6 @@ import {
     LevelEnum,
     LogTypeEnum,
     ActionNameEnum,
-    //ActionIDEnum,
     EntityTypeEnum,
     EntityIDEnum,
     IdentityNameEnum,
@@ -15,7 +14,6 @@ export type Level = typeof LevelEnum[keyof typeof LevelEnum]
 export type LogType = typeof LogTypeEnum[keyof typeof LogTypeEnum]
 export type ActionKey = keyof typeof ActionNameEnum
 export type ActionName = typeof ActionNameEnum[ActionKey]
-//export type ActionID = typeof ActionIDEnum[keyof typeof ActionIDEnum]
 export type EntityType = typeof EntityTypeEnum[keyof typeof EntityTypeEnum]
 export type EntityID = typeof EntityIDEnum[keyof typeof EntityIDEnum]
 export type IdentityName = typeof IdentityNameEnum[keyof typeof IdentityNameEnum]
