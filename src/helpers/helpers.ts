@@ -66,7 +66,3 @@ export function promisify<T, A extends unknown[]>(func: (...args: A) => T): (...
     });
 };
 }
-
-export function getActionKeyByValue(object: typeof ActionNameEnum, value: ActionName) {
-    return Object.keys(object).find((key) => object[key as ActionKey] === value) as ActionKey
-}

@@ -1,6 +1,6 @@
 import io, { Socket } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
-import { getActionKeyByValue, promisify } from './helpers/helpers'
+import { promisify } from './helpers/helpers'
 import { getLogData, removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
 import {
     ConfigOptions,
@@ -9,11 +9,11 @@ import {
     ParseLogFunction,
     ConsoleMethod,
     SyncGetItemFunction,
-    LoggerData,
+    LoggerDataInner,
     LoggerBaseData,
     LoggerDataPartial
 } from './types'
-import {ActionIDEnum, ActionNameEnum, defaultConnectOptions, defaultLoggerOptions} from './enum'
+import { ActionIDEnum, defaultConnectOptions, defaultLoggerOptions } from './enum'
 
 let globalConsole = console
 
@@ -182,7 +182,7 @@ export default class StorageLogger<DataType = unknown>{
             for (const key of keys) {
                 const parsedObject = parseLogObject(parsedLogs[key])
                 const additionalParams: LoggerBaseData = this.populateMetaData()
-                const logData: LoggerData = {
+                const logData: LoggerDataInner = {
                     ...additionalParams,
                     ...this.staticObject,
                     ...parsedObject,
@@ -211,20 +211,15 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Used to set additional properties for every sending log
-     * @return LoggerData
+     * @return LoggerDataInner
      */
-    private populateSendingLog(data: LoggerData) {
-        const sendingData: LoggerData = {
+    private populateSendingLog (data: LoggerDataInner) {
+        const sendingData: LoggerDataInner = {
             ...data
         }
         const actionName = sendingData.ActionName
         if (actionName) {
-            const actionIdKey = getActionKeyByValue(ActionNameEnum, actionName)
-
-            if (actionIdKey) {
-                const actionId = ActionIDEnum[actionIdKey]
-                sendingData.ActionID = actionId
-            }
+            sendingData.ActionID = ActionIDEnum[actionName]
         }
 
         return sendingData

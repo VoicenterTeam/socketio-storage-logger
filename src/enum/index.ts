@@ -33,30 +33,30 @@ export const ActionNameEnum = {
     REFRESH: 'Refresh',
     CHECK: 'Check',
     WEBHOOK: 'Webhook',
-    WSCONNECT: 'WSConnect',
+    WSCONNECT: 'WSConnect'
 } as const
 
 export const ActionIDEnum = {
-    CREATE: 1,
-    READ: 2,
-    UPDATE: 3,
-    DELETE: 4,
-    CONVERT: 5,
-    DOWNLOAD: 6,
-    UPLOAD: 7,
-    ENCRYPT: 8,
-    DECRYPT: 9,
-    FILTER: 10,
-    INPUT: 11,
-    OUTPUT: 12,
-    PLUGIN: 13,
-    LOGIN: 14,
-    LOGOUT: 15,
-    REFRESH: 16,
-    CHECK: 17,
-    WEBHOOK: 18,
-    WSCONNECT: 19,
-} as const
+    Create: 1,
+    Read: 2,
+    Update: 3,
+    Delete: 4,
+    Convert: 5,
+    Download: 6,
+    Upload: 7,
+    Encrypt: 8,
+    Decrypt: 9,
+    Filter: 10,
+    Input: 11,
+    Output: 12,
+    Plugin: 13,
+    Login: 14,
+    Logout: 15,
+    Refresh: 16,
+    Check: 17,
+    Webhook: 18,
+    WSConnect: 19
+}
 
 export const LogTypeEnum = {
     INFO: 'info',
