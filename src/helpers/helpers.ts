@@ -1,3 +1,6 @@
+import { ActionNameEnum } from "../enum";
+import { ActionName, ActionKey } from "../types";
+
 export function parseLogDefault (level: string, logs: unknown[]) {
     const message = logs.map(log => JSON.stringify(log)).join(' ')
     const time = new Date().toISOString()
@@ -62,4 +65,8 @@ export function promisify<T, A extends unknown[]>(func: (...args: A) => T): (...
         }
     });
 };
+}
+
+export function getActionKeyByValue(object: typeof ActionNameEnum, value: ActionName) {
+    return Object.keys(object).find((key) => object[key as ActionKey] === value) as ActionKey
 }
