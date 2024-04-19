@@ -36,7 +36,8 @@ export const ActionNameEnum = {
     WSCONNECT: 'WSConnect'
 } as const
 
-export const ActionIDEnum = {
+type ActionNameEnumType = typeof ActionNameEnum
+export const ActionIDEnum: Record<ActionNameEnumType[keyof ActionNameEnumType], number> = {
     Create: 1,
     Read: 2,
     Update: 3,
