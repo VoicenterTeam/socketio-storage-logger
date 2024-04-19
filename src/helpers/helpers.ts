@@ -1,3 +1,6 @@
+import { ActionNameEnum } from "../enum";
+import { ActionName, ActionKey } from "../types";
+
 export function parseLogDefault (level: string, logs: unknown[]) {
     const message = logs.map(log => JSON.stringify(log)).join(' ')
     const time = new Date().toISOString()

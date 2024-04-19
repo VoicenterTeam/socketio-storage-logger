@@ -9,11 +9,11 @@ import {
     ParseLogFunction,
     ConsoleMethod,
     SyncGetItemFunction,
-    LoggerData,
+    LoggerDataInner,
     LoggerBaseData,
     LoggerDataPartial
 } from './types'
-import { defaultConnectOptions, defaultLoggerOptions } from './enum'
+import { ActionIDEnum, defaultConnectOptions, defaultLoggerOptions } from './enum'
 
 let globalConsole = console
 
@@ -182,11 +182,12 @@ export default class StorageLogger<DataType = unknown>{
             for (const key of keys) {
                 const parsedObject = parseLogObject(parsedLogs[key])
                 const additionalParams: LoggerBaseData = this.populateMetaData()
-                const sendingLog: LoggerData = {
+                const logData: LoggerDataInner = {
                     ...additionalParams,
                     ...this.staticObject,
                     ...parsedObject,
                 }
+                const sendingLog = this.populateSendingLog(logData)
                 await this.socket.emit("Log", JSON.stringify(sendingLog)) // logs only value
                 keysToReset.push(key)
             }
@@ -209,6 +210,21 @@ export default class StorageLogger<DataType = unknown>{
     }
 
     /**
+     * Used to set additional properties for every sending log
+     * @return LoggerDataInner
+     */
+    private populateSendingLog (data: LoggerDataInner) {
+        const sendingData: LoggerDataInner = {
+            ...data
+        }
+        const actionName = sendingData.ActionName
+        if (actionName) {
+            sendingData.ActionID = ActionIDEnum[actionName]
+        }
+
+        return sendingData
+    }
+
      /**
      * Used to set a static object which will be send in every message
      * @return void
@@ -216,6 +232,7 @@ export default class StorageLogger<DataType = unknown>{
     public setupStaticFields(data: LoggerDataPartial) {
         this.staticObject = { ...data }
     }
+
     /**
      * Used to populate sending message object with static client parameters
      * @return object
