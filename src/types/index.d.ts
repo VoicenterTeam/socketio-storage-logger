@@ -149,6 +149,6 @@ export type MainParametersPartial = Partial<LoggerMainParameters>
 
 export type LoggerDataInner = LoggerBaseData & LoggerMainParameters
 
-export type LoggerData = Omit<LoggerData, 'ActionID'>
+export type LoggerData = Omit<LoggerDataInner, 'ActionID'>
 
 export type LoggerDataPartial = Partial<LoggerData>
