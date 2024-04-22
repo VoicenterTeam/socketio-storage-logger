@@ -31,12 +31,14 @@ export default class StorageLogger<DataType = unknown>{
     private emitInProgress: boolean
     private queue: Array<Array<unknown>>
     private processing: boolean
+    private storageInitialized: boolean
     private interval: ReturnType<typeof setInterval> | undefined
     private logIndex: number
 
     private socket: Socket | undefined
 
     private staticObject: LoggerDataPartial = {}
+    private localObject: { [key: string]: DataType } = {}
 
     private readonly isGetItemAsync: boolean
     private readonly isSetItemAsync: boolean
@@ -80,6 +82,7 @@ export default class StorageLogger<DataType = unknown>{
 
         this.queue = []
         this.processing = false
+        this.storageInitialized = false
         this.emitInProgress = false
         this.logIndex = 0
 
@@ -169,21 +172,26 @@ export default class StorageLogger<DataType = unknown>{
         if (this.emitInProgress) return
         try {
             const storedLogs = await this.getItem(this.storageId)
-            if (!storedLogs) return
+            const storageLogs = JSON.parse(storedLogs || '{}')
+
+            const parsedLogs = {
+                ...this.localObject,
+                ...storageLogs
+            }
+
+            if (!Object.keys(parsedLogs).length) return
 
             const keysToReset = []
             this.emitInProgress = true
 
-            const parsedLogs = JSON.parse(storedLogs)
             const keys = Object.keys(parsedLogs)
             if (!keys.length) return
             if (!this.socket || !this.socket.connected) throw new Error('Socket is disconnected')
 
             for (const key of keys) {
                 const parsedObject = parseLogObject(parsedLogs[key])
-                const additionalParams: LoggerBaseData = this.populateMetaData()
+
                 const logData: LoggerDataInner = {
-                    ...additionalParams,
                     ...this.staticObject,
                     ...parsedObject,
                 }
@@ -199,6 +207,7 @@ export default class StorageLogger<DataType = unknown>{
             if (!logs) return
 
             const logsToStore = removeLogsByKeys(logs, keysToReset)
+            this.localObject = {}
 
             // Update storage logs object after socket emits
             await this.setItem(this.storageId, JSON.stringify(logsToStore))
@@ -300,6 +309,7 @@ export default class StorageLogger<DataType = unknown>{
 
         if (!storedLogs || typeof storedLogs !== 'string') {
             await this.setItem(this.storageId, JSON.stringify({}))
+            this.storageInitialized = true
         }
     }
 
@@ -326,19 +336,30 @@ export default class StorageLogger<DataType = unknown>{
      * arguments are logs to be stored
      * @return void
      */
-    private async processLog (...args: unknown[]): Promise<void> {
+    private async processLog (...args: [string, DataType]): Promise<void> {
         try {
             if (args.length < 2) return
+
+            const level = args[0]
+            const log = args[1]
+            //const { level, logs } = getLogData(args)
+            const key = this.formItemKey(level)
+
+            if (!this.storageInitialized) {
+                this.localObject = {
+                    ...this.localObject,
+                    [key]: log
+                }
+
+                return
+            }
 
             const storedLogs = await this.getItem(this.storageId)
             if (!storedLogs) return
 
-            const { level, logs } = getLogData(args)
-
             const parsedLogs = JSON.parse(storedLogs)
-            const key = this.formItemKey(level)
 
-            parsedLogs[key] = this.parseLog(level, logs)
+            parsedLogs[key] = log //this.parseLog(level, logs)
             await this.setItem(this.storageId, JSON.stringify(parsedLogs))
         } catch (e) {
             this._errorMethod(e)
@@ -376,10 +397,15 @@ export default class StorageLogger<DataType = unknown>{
      * @return void
      */
     public log (logData: DataType): void {
-        const data = [ 'INFO', logData ]
+        const additionalData: LoggerBaseData = this.populateMetaData()
+        const log: DataType = {
+            ...additionalData,
+            ...logData
+        }
+        const data = [ 'INFO', log ]
         this.queue.push(data)
         if (this.logToConsole) {
-            this._logMethod.apply(globalConsole, [ logData ])
+            this._logMethod.apply(globalConsole, [ log ])
         }
         this.processQueue()
     }
