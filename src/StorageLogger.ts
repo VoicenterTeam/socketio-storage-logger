@@ -359,7 +359,7 @@ export default class StorageLogger<DataType = unknown>{
 
             const parsedLogs = JSON.parse(storedLogs)
 
-            parsedLogs[key] = log //this.parseLog(level, logs)
+            parsedLogs[key] = JSON.stringify(log) //this.parseLog(level, logs)
             await this.setItem(this.storageId, JSON.stringify(parsedLogs))
         } catch (e) {
             this._errorMethod(e)
