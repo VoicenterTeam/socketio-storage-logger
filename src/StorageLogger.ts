@@ -267,13 +267,34 @@ export default class StorageLogger<DataType = unknown>{
     }
 
     /**
-     * Used to interrupt socket connection
+     * Used to stop logger and interrupt socket connection
      * @return void
      */
-    public disconnectSocket (): void {
-        if (!this.socket || !this.interval) return
-        this.socket.disconnect()
+    public async stop () {
+        if (!this.socket || !this.socket.connected) {
+            throw new Error('Socket connection doesn\'t exists!')
+        }
+
         clearInterval(this.interval)
+        await this.emitLogs()
+
+        this.socket.disconnect()
+    }
+
+    /**
+     * Used to start logger and reconnect socket connection
+     * @return void
+     */
+    public async start () {
+        if (this.socket && this.socket.connected) {
+            throw new Error('Socket connection already exists!')
+        }
+
+        this.socket.connect();
+
+        this.interval = setInterval(async () => {
+            await this.emitLogs()
+        }, this.socketEmitInterval)
     }
 
     /**
