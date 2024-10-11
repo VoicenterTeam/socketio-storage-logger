@@ -272,7 +272,7 @@ export default class StorageLogger<DataType = unknown>{
      */
     public async stop () {
         if (!this.socket || !this.socket.connected) {
-            throw new Error('Socket connection doesn\'t exists!')
+            return
         }
 
         clearInterval(this.interval)
@@ -287,7 +287,7 @@ export default class StorageLogger<DataType = unknown>{
      */
     public async start () {
         if (this.socket && this.socket.connected) {
-            throw new Error('Socket connection already exists!')
+            return
         }
 
         this.socket.connect();
