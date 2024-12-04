@@ -120,7 +120,7 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Used to send http log request.
-     * @param body Stringified logs object which is sent in request body.
+     * @param body logs array which is sent in request body.
      * @return {Promise<void>}
      */
     private sendHttpRequest (logs) {
