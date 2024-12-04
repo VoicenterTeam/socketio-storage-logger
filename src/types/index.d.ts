@@ -32,6 +32,11 @@ export interface ConfigOptions {
     url?: string
 
     /**
+     * This defines the url for https logger requests.
+     */
+    requestUrl?: string
+
+    /**
      * This defines initializing configuration options for socket-io connection.
      */
     socketOptions?: object
