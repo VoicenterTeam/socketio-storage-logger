@@ -36,6 +36,7 @@ export default class StorageLogger<DataType = unknown>{
     private logIndex: number
 
     private socket: Socket | undefined
+    private requestUrl: string | undefined
 
     private staticObject: LoggerDataPartial = {}
     private localObject: { [key: string]: DataType } = {}
@@ -118,12 +119,35 @@ export default class StorageLogger<DataType = unknown>{
     }
 
     /**
+     * Used to send http log request.
+     * @param body logs array which is sent in request body.
+     * @return {Promise<void>}
+     */
+    private sendHttpRequest (logs: Array<LoggerDataInner>) {
+        if (!this.requestUrl) {
+            throw new Error('requestUrl is not provided')
+        }
+
+        const body = {
+            Data: logs
+        }
+
+        return fetch(this.requestUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        })
+    }
+
+    /**
      * Used to initialize logger. Initializes storage, establishes socket connection and overloads console if needed
      * @param options The logger config.
      * @return void
      */
     private init (options: ConfigOptions) {
-        const { socket, url, socketOptions = {} } = options
+        const { socket, url, requestUrl, socketOptions = {} } = options
 
         this._logMethod = globalConsole.log.bind(globalConsole)//globalConsole.log
         this._warnMethod = globalConsole.warn.bind(globalConsole)//globalConsole.warn
@@ -135,8 +159,10 @@ export default class StorageLogger<DataType = unknown>{
                 this.socket = socket
             } else if (url) {
                 this.socket = this.createConnection(url, socketOptions)
+            } else if (requestUrl) {
+                this.requestUrl = requestUrl
             } else {
-                throw new Error('Must provide either a \'socket\' or a \'url\' for socket connection')
+                throw new Error('Must provide either a \'socket\', \'requestUrl\' or a \'url\' for logger requests')
             }
 
             this.interval = setInterval(async () => {
@@ -186,7 +212,11 @@ export default class StorageLogger<DataType = unknown>{
 
             const keys = Object.keys(parsedLogs)
             if (!keys.length) return
-            if (!this.socket || !this.socket.connected) throw new Error('Socket is disconnected')
+
+            if ((!this.socket || !this.socket.connected) && !this.requestUrl)
+                throw new Error('Log request can\'t be sent. Socket is disconnected or requestUrl is not provided')
+
+            const httpRequestLogs: Array<LoggerDataInner> = []
 
             for (const key of keys) {
                 const parsedObject = parseLogObject(parsedLogs[key])
@@ -196,8 +226,18 @@ export default class StorageLogger<DataType = unknown>{
                     ...parsedObject,
                 }
                 const sendingLog = this.populateSendingLog(logData)
-                await this.socket.emit("Log", JSON.stringify(sendingLog)) // logs only value
+
+                if (this.socket) {
+                    await this.socket.emit("Log", JSON.stringify(sendingLog)) // logs only value
+                } else if (this.requestUrl) {
+                    httpRequestLogs.push(sendingLog)
+                }
+
                 keysToReset.push(key)
+            }
+
+            if (httpRequestLogs.length) {
+                await this.sendHttpRequest(httpRequestLogs)
             }
 
             // During emitting sockets new logs could be added
