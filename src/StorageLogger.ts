@@ -123,7 +123,7 @@ export default class StorageLogger<DataType = unknown>{
      * @param body logs array which is sent in request body.
      * @return {Promise<void>}
      */
-    private sendHttpRequest (logs) {
+    private sendHttpRequest (logs: Array<LoggerDataInner>) {
         if (!this.requestUrl) {
             throw new Error('requestUrl is not provided')
         }
@@ -216,7 +216,7 @@ export default class StorageLogger<DataType = unknown>{
             if ((!this.socket || !this.socket.connected) && !this.requestUrl)
                 throw new Error('Log request can\'t be sent. Socket is disconnected or requestUrl is not provided')
 
-            const httpRequestLogs = []
+            const httpRequestLogs: Array<LoggerDataInner> = []
 
             for (const key of keys) {
                 const parsedObject = parseLogObject(parsedLogs[key])
