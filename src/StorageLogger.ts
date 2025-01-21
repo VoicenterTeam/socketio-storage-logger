@@ -228,7 +228,7 @@ export default class StorageLogger<DataType = unknown>{
                 const sendingLog = this.populateSendingLog(logData)
 
                 if (this.socket) {
-                    await this.socket.emit("Log", JSON.stringify(sendingLog)) // logs only value
+                    await this.socket.emit("Log", sendingLog) // logs only value
                 } else if (this.requestUrl) {
                     httpRequestLogs.push(sendingLog)
                 }
