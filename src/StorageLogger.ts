@@ -1,4 +1,4 @@
-import io, { Socket } from 'socket.io-client'
+import io, { Socket, SocketOptions } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
 import { promisify } from './helpers/helpers'
 import { getLogData, removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
@@ -120,10 +120,10 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Used to send http log request.
-     * @param body logs array which is sent in request body.
-     * @return {Promise<void>}
+     * @param logs logs array which is sent in request body.
+     * @return {Promise<Response>}
      */
-    private sendHttpRequest (logs: Array<LoggerDataInner>) {
+    private sendHttpRequest (logs: Array<LoggerDataInner>): Promise<Response> {
         if (!this.requestUrl) {
             throw new Error('requestUrl is not provided')
         }
@@ -181,10 +181,16 @@ export default class StorageLogger<DataType = unknown>{
      * @param options The options used for the socket connection.
      * @return void
      */
-    private createConnection (url: string, options: object = {}) {
-        const connectOptions = {
+    private createConnection (url: string, options?: SocketOptions) {
+        let connectOptions = {
             ...defaultConnectOptions,
-            ...options
+        }
+
+        if (options) {
+            connectOptions = {
+                ...connectOptions,
+                ...options
+            }
         }
 
         return io(url, connectOptions)
@@ -196,6 +202,7 @@ export default class StorageLogger<DataType = unknown>{
      */
     private async emitLogs (): Promise<void> {
         if (this.emitInProgress) return
+
         try {
             const storedLogs = await this.getItem(this.storageId)
             const storageLogs = JSON.parse(storedLogs || '{}')
@@ -225,6 +232,7 @@ export default class StorageLogger<DataType = unknown>{
                     ...this.staticObject,
                     ...parsedObject,
                 }
+
                 const sendingLog = this.populateSendingLog(logData)
 
                 if (sendingLog.Body && typeof sendingLog.Body === 'string') {
@@ -232,7 +240,7 @@ export default class StorageLogger<DataType = unknown>{
                 }
 
                 if (this.socket) {
-                    await this.socket.emit("Log", sendingLog) // logs only value
+                    this.socket.emit('Log', sendingLog) // logs only value
                 } else if (this.requestUrl) {
                     httpRequestLogs.push(sendingLog)
                 }
@@ -271,6 +279,7 @@ export default class StorageLogger<DataType = unknown>{
             ...data
         }
         const actionName = sendingData.ActionName
+
         if (actionName) {
             sendingData.ActionID = ActionIDEnum[actionName]
         }
@@ -278,11 +287,11 @@ export default class StorageLogger<DataType = unknown>{
         return sendingData
     }
 
-     /**
+    /**
      * Used to set a static object which will be send in every message
      * @return void
      */
-    public setupStaticFields(data: LoggerDataPartial) {
+    public setupStaticFields (data: LoggerDataPartial) {
         this.staticObject = { ...data }
     }
 
@@ -290,18 +299,23 @@ export default class StorageLogger<DataType = unknown>{
      * Used to populate sending message object with static client parameters
      * @return object
      */
-    private populateMetaData(): LoggerBaseData {
+    private populateMetaData (): LoggerBaseData {
         const DateTime = new Date()
+
         let UserAgent
+
         if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
             UserAgent = window?.navigator.userAgent
         } else if (typeof self !== 'undefined' && self.navigator) {
             UserAgent = self.navigator.userAgent
         }
+
         let OSVersion
+
         if (UserAgent) {
             OSVersion = getOSString(UserAgent)
         }
+
         return {
             System: this.system,
             DateTime,
@@ -334,7 +348,8 @@ export default class StorageLogger<DataType = unknown>{
             return
         }
 
-        this.socket.connect();
+        this.socket?.connect()
+
 
         this.interval = setInterval(async () => {
             await this.emitLogs()
@@ -458,20 +473,25 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Logs info data into the storage
-     * @param args The arguments to be logged.
+     * @param logData The arguments to be logged.
      * @return void
      */
     public log (logData: DataType): void {
         const additionalData: LoggerBaseData = this.populateMetaData()
+
         const log: DataType = {
             ...additionalData,
             ...logData
         }
+
         const data = [ 'INFO', log ]
+
         this.queue.push(data)
+
         if (this.logToConsole) {
             this._logMethod.apply(globalConsole, [ log ])
         }
+
         this.processQueue()
     }
 

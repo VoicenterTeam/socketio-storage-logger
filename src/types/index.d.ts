@@ -1,4 +1,4 @@
-import { Socket } from 'socket.io-client'
+import { ManagerOptions, Socket, SocketOptions as IOSocketOptions } from 'socket.io-client'
 import {
     LevelEnum,
     LogTypeEnum,
@@ -20,6 +20,8 @@ export type IdentityName = typeof IdentityNameEnum[keyof typeof IdentityNameEnum
 export type IdentityType = typeof IdentityTypeEnum[keyof typeof IdentityTypeEnum]
 export type IdentityID = typeof IdentityIDEnum[keyof typeof IdentityIDEnum]
 
+export type SocketOptions = Partial<ManagerOptions & IOSocketOptions>
+
 export interface ConfigOptions {
     /**
      * This defines the initialized socket socket-io connection.
@@ -39,7 +41,7 @@ export interface ConfigOptions {
     /**
      * This defines initializing configuration options for socket-io connection.
      */
-    socketOptions?: object
+    socketOptions?: SocketOptions
 
     /**
      * This defines the configuration options for logger.
