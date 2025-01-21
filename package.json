@@ -1,6 +1,6 @@
 {
   "name": "@voicenter-team/socketio-storage-logger",
-  "version": "1.9.27",
+  "version": "1.9.29",
   "description": "Logger that allows you to save logged information into your storage and emit stored logs via socket.io",
   "main": "dist/storage-logger.cjs.js",
   "jsdelivr": "dist/storage-logger.umd.js",
@@ -10,6 +10,7 @@
   "type": "module",
   "precommit": "ts-check, lint",
   "scripts": {
+    "dev": "vite",
     "build": "vite build",
     "ts-check": "tsc --noEmit",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts --fix --ignore-path .gitignore"
@@ -17,7 +18,7 @@
   "author": "Serhii Kundys",
   "license": "ISC",
   "dependencies": {
-    "socket.io-client": "4.7.4",
+    "socket.io-client": "2.5.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -27,10 +28,10 @@
     "@typescript-eslint/parser": "6.20.0",
     "@voicenter-team/eslint-config-ts": "^1.0.22",
     "eslint": "8.56.0",
+    "pre-commit": "^1.2.2",
     "typescript": "5.3.3",
     "vite": "5.0.12",
-    "vite-plugin-dts": "3.7.2",
-    "pre-commit": "^1.2.2"
+    "vite-plugin-dts": "3.7.2"
   },
   "files": [
     "dist/*"
