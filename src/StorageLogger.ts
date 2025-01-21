@@ -227,6 +227,10 @@ export default class StorageLogger<DataType = unknown>{
                 }
                 const sendingLog = this.populateSendingLog(logData)
 
+                if (sendingLog.Body && typeof sendingLog.Body === 'string') {
+                    sendingLog.Body = JSON.parse(sendingLog.Body)
+                }
+
                 if (this.socket) {
                     await this.socket.emit("Log", sendingLog) // logs only value
                 } else if (this.requestUrl) {
