@@ -235,12 +235,8 @@ export default class StorageLogger<DataType = unknown>{
 
                 const sendingLog = this.populateSendingLog(logData)
 
-                if (sendingLog.Body && typeof sendingLog.Body === 'string') {
-                    sendingLog.Body = JSON.parse(sendingLog.Body)
-                }
-
                 if (this.socket) {
-                    this.socket.emit('Log', sendingLog) // logs only value
+                    this.socket.emit('Log', JSON.stringify(sendingLog)) // logs only value
                 } else if (this.requestUrl) {
                     httpRequestLogs.push(sendingLog)
                 }
