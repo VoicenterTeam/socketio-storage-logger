@@ -154,7 +154,7 @@ export interface LoggerMainParameters {
     DestinationIP?: string
     Host?: string
     ServerName?: string
-    Body?: string
+    Body?: string | Record<string, unknown>
     ActionID?: number
     Version?: string
     MachineName?: string

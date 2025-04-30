@@ -1,7 +1,8 @@
+// @ts-expect-error The version of socket io used has no types yet
 import io, { Socket, SocketOptions } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
 import { promisify } from './helpers/helpers'
-import { getLogData, removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
+import { removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
 import {
     ConfigOptions,
     GetItemFunction,
@@ -271,8 +272,12 @@ export default class StorageLogger<DataType = unknown> {
 
                 const sendingLog = this.populateSendingLog(logData)
 
+                if (sendingLog.Body && typeof sendingLog.Body === 'string') {
+                    sendingLog.Body = JSON.parse(sendingLog.Body)
+                }
+
                 if (this.socket) {
-                    this.socket.emit('Log', JSON.stringify(sendingLog)) // logs only value
+                    this.socket.emit('Log', sendingLog)
                 } else if (this.requestUrl) {
                     httpRequestLogs.push(sendingLog)
                 }
