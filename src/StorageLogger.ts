@@ -11,9 +11,11 @@ import {
     SyncGetItemFunction,
     LoggerDataInner,
     LoggerBaseData,
-    LoggerDataPartial
+    LoggerDataPartial,
+    Level,
+    LoggerLevelMap
 } from './types'
-import { ActionIDEnum, defaultConnectOptions, defaultLoggerOptions } from './enum'
+import { ActionIDEnum, defaultConnectOptions, defaultLoggerOptions, LevelEnum } from './enum'
 
 let globalConsole = console
 
@@ -21,12 +23,33 @@ interface ErrorMethod<T> {
     (message?: T | unknown, ...optionalParams: T[] | unknown[]): void
 }
 
-export default class StorageLogger<DataType = unknown>{
+export default class StorageLogger<DataType = unknown> {
     private readonly logToConsole: boolean
     private readonly overloadGlobalConsole: boolean
     public system: string
     public socketEmitInterval: number
     private readonly storageId: string
+    private readonly loggerLevel: Level = LevelEnum.DEBUG
+    private readonly loggerLevelMap: LoggerLevelMap = {
+        [LevelEnum.DEBUG]: [
+            LevelEnum.DEBUG,
+            LevelEnum.INFO,
+            LevelEnum.WARNING,
+            LevelEnum.ERROR
+        ],
+        [LevelEnum.INFO]: [
+            LevelEnum.INFO,
+            LevelEnum.WARNING,
+            LevelEnum.ERROR
+        ],
+        [LevelEnum.WARNING]: [
+            LevelEnum.WARNING,
+            LevelEnum.ERROR
+        ],
+        [LevelEnum.ERROR]: [
+            LevelEnum.ERROR
+        ]
+    }
 
     private emitInProgress: boolean
     private queue: Array<Array<unknown>>
@@ -69,6 +92,11 @@ export default class StorageLogger<DataType = unknown>{
         this.setupStorageFunctions(loggerOptions.getItem, loggerOptions.setItem, loggerOptions.parseLog)
 
         this.system = loggerOptions.system
+
+        if (loggerOptions.loggerLevel) {
+            this.loggerLevel = loggerOptions.loggerLevel
+        }
+
         this.socketEmitInterval = loggerOptions.socketEmitInterval || defaultLoggerOptions.socketEmitInterval
         this.logToConsole =
             loggerOptions.logToConsole !== undefined ?
@@ -88,6 +116,14 @@ export default class StorageLogger<DataType = unknown>{
         this.logIndex = 0
 
         this.init(options)
+    }
+
+    get currentLoggerLevelLogLevels () {
+        return this.loggerLevelMap[this.loggerLevel]
+    }
+
+    private isLogLevelAllowed (level: Level) {
+        return this.currentLoggerLevelLogLevels.includes(level)
     }
 
     /**
@@ -473,6 +509,10 @@ export default class StorageLogger<DataType = unknown>{
      * @return void
      */
     public log (logData: DataType): void {
+        if (!this.isLogLevelAllowed(LevelEnum.INFO)) {
+            return
+        }
+
         const additionalData: LoggerBaseData = this.populateMetaData()
 
         const log: DataType = {
@@ -493,10 +533,14 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Logs warn data into the storage
-     * @param args The arguments to be logged.
+     * @param logData The arguments to be logged.
      * @return void
      */
     public warn (logData: DataType): void {
+        if (!this.isLogLevelAllowed(LevelEnum.WARNING)) {
+            return
+        }
+
         const data = [ 'WARN', logData ]
         this.queue.push(data)
 
@@ -509,10 +553,14 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Logs error data into the storage
-     * @param args The arguments to be logged.
+     * @param logData The arguments to be logged.
      * @return void
      */
     public error (logData: DataType): void {
+        if (!this.isLogLevelAllowed(LevelEnum.ERROR)) {
+            return
+        }
+
         const data = [ 'ERROR', logData ]
         this.queue.push(data)
 
@@ -525,10 +573,14 @@ export default class StorageLogger<DataType = unknown>{
 
     /**
      * Logs debug data into the storage
-     * @param args The arguments to be logged.
+     * @param logData The arguments to be logged.
      * @return void
      */
     public debug (logData: DataType): void {
+        if (!this.isLogLevelAllowed(LevelEnum.DEBUG)) {
+            return
+        }
+
         const data = [ 'DEBUG', logData ]
         this.queue.push(data)
 

@@ -113,6 +113,18 @@ export interface LoggerOptions {
      * Function should be synchronous.
      */
     parseLog?: ParseLogFunction
+
+    /**
+     * The level of the logger.
+     * If not provided, the default level is 'debug'.
+     * Filters which logs will be sent to the server.
+     *
+     * If "debug" is set, all logs will be sent.
+     * If "info" is set, only info, warning and error logs will be sent.
+     * If "warning" is set, only warning and error logs will be sent.
+     * If "error" is set, only error logs will be sent.
+     */
+    loggerLevel?: Level
 }
 
 export interface LoggerBaseData {
@@ -159,3 +171,5 @@ export type LoggerDataInner = LoggerBaseData & LoggerMainParameters
 export type LoggerData = Omit<LoggerDataInner, 'ActionID'>
 
 export type LoggerDataPartial = Partial<LoggerData>
+
+export type LoggerLevelMap = Record<Level, Array<Level>>
