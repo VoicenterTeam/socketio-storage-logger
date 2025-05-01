@@ -30,7 +30,7 @@ export default class StorageLogger<DataType = unknown> {
     public system: string
     public socketEmitInterval: number
     private readonly storageId: string
-    private readonly loggerLevel: Level = LevelEnum.DEBUG
+    private loggerLevel: Level = LevelEnum.DEBUG
     private readonly loggerLevelMap: LoggerLevelMap = {
         [LevelEnum.DEBUG]: [
             LevelEnum.DEBUG,
@@ -121,6 +121,20 @@ export default class StorageLogger<DataType = unknown> {
 
     get currentLoggerLevelLogLevels () {
         return this.loggerLevelMap[this.loggerLevel]
+    }
+
+    /**
+     * The level of the logger.
+     * If not provided, the default level is 'debug'.
+     * Filters which logs will be sent to the server.
+     *
+     * - If "debug" is set, all logs will be sent.
+     * - If "info" is set, only info, warning and error logs will be sent.
+     * - If "warning" is set, only warning and error logs will be sent.
+     * - If "error" is set, only error logs will be sent.
+     */
+    public changeLogLevel (level: Level) {
+        this.loggerLevel = level
     }
 
     private isLogLevelAllowed (level: Level) {

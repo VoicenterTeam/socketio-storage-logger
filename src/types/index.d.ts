@@ -119,10 +119,10 @@ export interface LoggerOptions {
      * If not provided, the default level is 'debug'.
      * Filters which logs will be sent to the server.
      *
-     * If "debug" is set, all logs will be sent.
-     * If "info" is set, only info, warning and error logs will be sent.
-     * If "warning" is set, only warning and error logs will be sent.
-     * If "error" is set, only error logs will be sent.
+     * - If "debug" is set, all logs will be sent.
+     * - If "info" is set, only info, warning and error logs will be sent.
+     * - If "warning" is set, only warning and error logs will be sent.
+     * - If "error" is set, only error logs will be sent.
      */
     loggerLevel?: Level
 }
