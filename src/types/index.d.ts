@@ -125,6 +125,12 @@ export interface LoggerOptions {
      * - If "error" is set, only error logs will be sent.
      */
     loggerLevel?: Level
+
+    /**
+     * A static object that can optionally hold partial logger data.
+     * The data set here will be sent in each log if not overridden by log data.
+     */
+    staticObject?: LoggerDataPartial
 }
 
 export interface LoggerBaseData {

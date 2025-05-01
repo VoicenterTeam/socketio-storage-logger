@@ -115,6 +115,7 @@ export default class StorageLogger<DataType = unknown> {
         this.storageInitialized = false
         this.emitInProgress = false
         this.logIndex = 0
+        this.staticObject = loggerOptions.staticObject ?? {}
 
         this.init(options)
     }
