@@ -348,6 +348,17 @@ export default class StorageLogger<DataType = unknown> {
     }
 
     /**
+     * Used to update a static object which will be send in every message
+     * @return void
+     */
+    public updateStaticFields (data: LoggerDataPartial) {
+        this.staticObject = {
+            ...this.staticObject,
+            ...data
+        }
+    }
+
+    /**
      * Used to populate sending message object with static client parameters
      * @return object
      */
