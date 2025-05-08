@@ -108,7 +108,3 @@ export const EntityTypeEnum = {
     CAMPAIGN: 'Campaign',
     QUEUE: 'Queue'
 } as const
-
-const test: Array<string | number> = []
-
-test.includes(1)
