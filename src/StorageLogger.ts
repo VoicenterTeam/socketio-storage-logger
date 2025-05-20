@@ -200,7 +200,7 @@ export default class StorageLogger<DataType = unknown> {
         return result
     }
 
-    private isLogLevelAllowed (level: Level) {
+    public isLogLevelAllowed (level: Level) {
         const result = this.currentLoggerLevelLogLevels.includes(level)
         this.internalDebugLog(`Checking if log level ${level} is allowed under current setting ${this.loggerLevel}: ${result}`)
         return result
