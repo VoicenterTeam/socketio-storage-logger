@@ -89,6 +89,10 @@ export default class StorageLogger<DataType = unknown> {
     constructor (options: ConfigOptions) {
         const { loggerOptions } = options
 
+        if (loggerOptions.debugPrefix) {
+            this.debugPrefix = `${this.debugPrefix}_[${loggerOptions.debugPrefix}]`
+        }
+
         this.internalDebugLog('Constructor called with options:', loggerOptions)
 
         if (!loggerOptions.system) {

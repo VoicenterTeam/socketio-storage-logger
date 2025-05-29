@@ -131,6 +131,11 @@ export interface LoggerOptions {
      * The data set here will be sent in each log if not overridden by log data.
      */
     staticObject?: LoggerDataPartial
+
+    /**
+     * A prefix to be added to local debug logs
+     */
+    debugPrefix?: string
 }
 
 export interface LoggerBaseData {
