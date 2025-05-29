@@ -31,6 +31,7 @@ export default class StorageLogger<DataType = unknown> {
     public socketEmitInterval: number
     private readonly storageId: string
     private loggerLevel: Level = LevelEnum.DEBUG
+    private isActive = false
     private readonly loggerLevelMap: LoggerLevelMap = {
         [LevelEnum.DEBUG]: [
             LevelEnum.DEBUG,
@@ -317,6 +318,8 @@ export default class StorageLogger<DataType = unknown> {
             }
 
             this.internalDebugLog('Logger initialization complete')
+
+            this.isActive = true
         }).catch(error => {
             this.internalDebugLog('Logger initialization failed:', error)
         })
@@ -567,22 +570,30 @@ export default class StorageLogger<DataType = unknown> {
      * @return void
      */
     public async stop () {
-        this.internalDebugLog('Stopping logger')
+        this.internalDebugLog('[STORAGE_LOGGER_STOP] Stopping logger')
 
-        if (!this.socket || !this.socket.connected) {
-            this.internalDebugLog('Socket not connected, skipping disconnect')
+        if (!this.isActive) {
+            this.internalDebugLog('[STORAGE_LOGGER_STOP] Logger already stooped, skipping stop.')
             return
         }
 
-        this.internalDebugLog('Clearing emit interval')
+        this.internalDebugLog('[STORAGE_LOGGER_STOP] Clearing emit interval')
         clearInterval(this.interval)
 
-        this.internalDebugLog('Performing final emit before stopping')
+        this.internalDebugLog('[STORAGE_LOGGER_STOP] Performing final emit before stopping')
         await this.emitLogs()
 
-        this.internalDebugLog('Disconnecting socket')
-        this.socket.disconnect()
-        this.internalDebugLog('Logger stopped')
+        this.internalDebugLog('[STORAGE_LOGGER_STOP] Disconnecting socket')
+        if (!this.socket || !this.socket.connected) {
+            this.internalDebugLog('[STORAGE_LOGGER_STOP] Socket not connected, skipping disconnect')
+        } else {
+            this.socket.disconnect()
+            this.internalDebugLog('[STORAGE_LOGGER_STOP] Disconnected socket')
+        }
+
+        this.internalDebugLog('[STORAGE_LOGGER_STOP] Logger stopped')
+
+        this.isActive = false
     }
 
     /**
@@ -590,26 +601,34 @@ export default class StorageLogger<DataType = unknown> {
      * @return void
      */
     public async start () {
-        this.internalDebugLog('Starting logger')
+        this.internalDebugLog('[STORAGE_LOGGER_START] Starting logger')
 
-        if (this.socket && this.socket.connected) {
-            this.internalDebugLog('Socket already connected, skipping')
+        if (this.isActive) {
+            this.internalDebugLog('[STORAGE_LOGGER_START] Logger already started, skipping start.')
             return
         }
 
+        this.internalDebugLog('[STORAGE_LOGGER_START] Connecting socket')
+
         if (this.socket) {
-            this.internalDebugLog('Reconnecting socket')
-            this.socket.connect()
-            this.internalDebugLog('Socket reconnection initiated')
+            if (this.socket.connected) {
+                this.internalDebugLog('[STORAGE_LOGGER_START] Socket already connected, skipping socket reconnection')
+            } else {
+                this.internalDebugLog('[STORAGE_LOGGER_START] Socket reconnection initiated')
+                this.socket.connect()
+            }
         }
 
-        this.internalDebugLog(`Setting up emit interval: ${this.socketEmitInterval}ms`)
+        this.internalDebugLog(`[STORAGE_LOGGER_START] Setting up emit interval: ${this.socketEmitInterval}ms`)
+
         this.interval = setInterval(async () => {
-            this.internalDebugLog('Emit interval triggered')
+            this.internalDebugLog('[STORAGE_LOGGER_START] Emit interval triggered')
             await this.emitLogs()
         }, this.socketEmitInterval)
 
-        this.internalDebugLog('Logger started')
+        this.internalDebugLog('[STORAGE_LOGGER_START] Logger started')
+
+        this.isActive = true
     }
 
     /**
