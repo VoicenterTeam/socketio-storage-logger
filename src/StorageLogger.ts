@@ -378,7 +378,7 @@ export default class StorageLogger<DataType = unknown> {
      * Emits stored logs to the server and clears the log storage in case the emit operation was successful
      * @return {Promise<void>}
      */
-    private async emitLogs (): Promise<void> {
+    public async emitLogs (): Promise<void> {
         this.internalDebugLog('Attempting to emit logs')
 
         if (this.emitInProgress) {
