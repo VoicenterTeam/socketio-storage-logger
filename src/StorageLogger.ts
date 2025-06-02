@@ -418,7 +418,8 @@ export default class StorageLogger<DataType = unknown> {
             if ((!this.socket || !this.socket.connected) && !this.requestUrl) {
                 const error = new Error('Log request can\'t be sent. Socket is disconnected or requestUrl is not provided')
                 this.internalDebugLog('Emit failed:', error.message)
-                throw error
+
+                return
             }
 
             const httpRequestLogs: Array<LoggerDataInner> = []
