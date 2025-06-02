@@ -742,13 +742,9 @@ export default class StorageLogger<DataType = unknown> {
 
             this.internalDebugLog('Retrieving logs from storage')
             const storedLogs = await this.getItem(this.storageId)
-            if (!storedLogs) {
-                this.internalDebugLog('No logs found in storage, skipping')
-                return
-            }
 
             this.internalDebugLog('Parsing stored logs')
-            const parsedLogs = JSON.parse(storedLogs)
+            const parsedLogs = JSON.parse(storedLogs || '{}')
             this.internalDebugLog('Parsed logs:', parsedLogs)
 
             parsedLogs[key] = JSON.stringify(log)
