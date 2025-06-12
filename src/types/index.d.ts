@@ -10,6 +10,8 @@ import {
     IdentityIDEnum
 } from '../enum'
 
+import { StorageWorkerConstructor } from '../services/BaseStorageWorker'
+
 export type Level = typeof LevelEnum[keyof typeof LevelEnum]
 export type LogType = typeof LogTypeEnum[keyof typeof LogTypeEnum]
 export type ActionKey = keyof typeof ActionNameEnum
@@ -49,17 +51,6 @@ export interface ConfigOptions {
     loggerOptions: LoggerOptions
 }
 
-export type SyncGetItemFunction = (storage: string) => string | null
-export type AsyncGetItemFunction = (storage: string) => Promise<string | null>
-
-export type SyncSetItemFunction = (storage: string, logs: string) => void
-export type AsyncSetItemFunction = (storage: string, logs: string) => Promise<void>
-
-export type GetItemFunction = SyncGetItemFunction | AsyncGetItemFunction
-export type SetItemFunction = SyncSetItemFunction | AsyncSetItemFunction
-
-export type ParseLogFunction = (level: string, logs: unknown[]) => string
-
 export type ConsoleMethod<T> = (this: Console, ...data: Array<T>) => void //{ (...data: any[]): void; (...data: any[]): void; (message?: any, ...optionalParams: any[]): void } | undefined
 
 export interface LoggerOptions {
@@ -85,34 +76,39 @@ export interface LoggerOptions {
     socketEmitInterval: number
 
     /**
-     * This defines the custom function for getting logs from storage is async
+     * The storage worker class that will be used to store logs.
+     *
+     * **REQUIRED** - You must provide a storage worker appropriate for your environment.
+     *
+     * @example
+     * ```typescript
+     * import StorageLogger, { LocalStorageWorker } from '@voicenter-team/socketio-storage-logger'
+     *
+     * // ✅ Browser environment with localStorage
+     * const logger = new StorageLogger({
+     *   loggerOptions: {
+     *     system: 'MyApp',
+     *     storageWorker: LocalStorageWorker
+     *   }
+     * })
+     *
+     * // ✅ Node.js environment with custom storage
+     * class FileSystemStorageWorker extends BaseStorageWorker {
+     *   constructor(debugLog: DebugLogFunction) {
+     *     super(debugLog)
+     *   }
+     *   // ... implement with fs operations
+     * }
+     *
+     * const logger = new StorageLogger({
+     *   loggerOptions: {
+     *     system: 'MyApp',
+     *     storageWorker: FileSystemStorageWorker
+     *   }
+     * })
+     * ```
      */
-    isGetItemAsync?: boolean
-
-    /**
-     * This defines the custom function for setting logs to storage is async
-     */
-    isSetItemAsync?: boolean
-
-    /**
-     * This defines the custom function for getting logs from storage.
-     * It is useful if the custom storage is used for logs storage.
-     * Function should be synchronous.
-     */
-    getItem?: GetItemFunction
-
-    /**
-     * This defines the custom function for setting logs to storage.
-     * It is useful if the custom storage is used for logs storage.
-     * Function should be synchronous.
-     */
-    setItem?: SetItemFunction
-
-    /**
-     * This defines the custom function for parsing logs.
-     * Function should be synchronous.
-     */
-    parseLog?: ParseLogFunction
+    storageWorker: StorageWorkerConstructor
 
     /**
      * The level of the logger.
