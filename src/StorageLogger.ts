@@ -1,15 +1,10 @@
 // @ts-expect-error The version of socket io used has no types yet
 import io, { Socket, SocketOptions } from 'socket.io-client'
 import { v4 as uuidv4 } from 'uuid'
-import { promisify } from './helpers/helpers'
-import { removeLogsByKeys, parseLogDefault, parseLogObject, getOSString } from './helpers/helpers'
+import { removeLogsByKeys, parseLogObject, getOSString } from './helpers/helpers'
 import {
     ConfigOptions,
-    GetItemFunction,
-    SetItemFunction,
-    ParseLogFunction,
     ConsoleMethod,
-    SyncGetItemFunction,
     LoggerDataInner,
     LoggerBaseData,
     LoggerDataPartial,
@@ -17,6 +12,7 @@ import {
     LoggerLevelMap
 } from './types'
 import { ActionIDEnum, defaultConnectOptions, defaultLoggerOptions, LevelEnum } from './enum'
+import BaseStorageWorker from './services/BaseStorageWorker'
 
 let globalConsole = console
 
@@ -66,12 +62,7 @@ export default class StorageLogger<DataType = unknown> {
     private staticObject: LoggerDataPartial = {}
     private localObject: { [key: string]: DataType } = {}
 
-    private readonly isGetItemAsync: boolean
-    private readonly isSetItemAsync: boolean
-
-    private getItem!: GetItemFunction
-    private setItem!: SetItemFunction
-    private parseLog!: ParseLogFunction
+    private readonly storageWorker: BaseStorageWorker
 
     private _logMethod!: ConsoleMethod<DataType>
     private _warnMethod!: ConsoleMethod<DataType>
@@ -80,7 +71,7 @@ export default class StorageLogger<DataType = unknown> {
 
     // Debug-related properties
     private loggerDebugEnabled: boolean = false
-    private debugPrefix: string = '[StorageLogger-Debug]'
+    private readonly debugPrefix: string = '[StorageLogger-Debug]'
 
     /**
      * Initialize storage logger
@@ -89,9 +80,9 @@ export default class StorageLogger<DataType = unknown> {
     constructor (options: ConfigOptions) {
         const { loggerOptions } = options
 
-        if (loggerOptions.debugPrefix) {
-            this.debugPrefix = `${this.debugPrefix}_[${loggerOptions.debugPrefix}]`
-        }
+        this.debugPrefix = loggerOptions.debugPrefix
+            ? `[StorageLogger-Debug]_[${loggerOptions.debugPrefix}]`
+            : '[StorageLogger-Debug]'
 
         this.internalDebugLog('Constructor called with options:', loggerOptions)
 
@@ -99,9 +90,22 @@ export default class StorageLogger<DataType = unknown> {
             throw new Error('Config property \'system\' should be provided!')
         }
 
-        this.isGetItemAsync = loggerOptions.isGetItemAsync || false
-        this.isSetItemAsync = loggerOptions.isSetItemAsync || false
-        this.setupStorageFunctions(loggerOptions.getItem, loggerOptions.setItem, loggerOptions.parseLog)
+        if (!loggerOptions.storageWorker) {
+            throw new Error(
+                'Config property \'storageWorker\' is required! ' +
+                'Choose an appropriate storage worker for your environment: ' +
+                'The library exposes pre implemented LocalStorageWorker (browser)' +
+                'or create a custom storage worker extending BaseStorageWorker.'
+            )
+        }
+
+        if (typeof loggerOptions.storageWorker !== 'function') {
+            throw new Error(
+                'Config property \'storageWorker\' must be a class constructor that extends BaseStorageWorker!'
+            )
+        }
+
+        this.storageWorker = new loggerOptions.storageWorker(this.internalDebugLog.bind(this))
 
         this.system = loggerOptions.system
 
@@ -138,6 +142,64 @@ export default class StorageLogger<DataType = unknown> {
         this.internalDebugLog('Static object initialized:', this.staticObject)
 
         this.init(options)
+    }
+
+    /**
+     * Migrates logs from old storage keys to the current storage key.
+     * This prevents logs from being orphaned when the storage logger reinitialized.
+     * @private
+     */
+    private async migrateOldLogs (): Promise<void> {
+        try {
+            this.internalDebugLog('Starting migration of old logs')
+
+            const allKeys = await this.storageWorker.getAllKeys()
+            this.internalDebugLog(`Found ${allKeys.length} total storage keys`)
+
+            const systemPrefix = this.system.toString().toUpperCase()
+            const oldSystemKeys = allKeys.filter(key =>
+                key.startsWith(systemPrefix) && key !== this.storageId
+            )
+
+            if (oldSystemKeys.length === 0) {
+                this.internalDebugLog('No old logs to migrate')
+                return
+            }
+
+            this.internalDebugLog(`Found ${oldSystemKeys.length} old keys to migrate:`, oldSystemKeys)
+
+            const currentLogsJson = await this.storageWorker.getItem(this.storageId)
+            const currentLogs = JSON.parse(currentLogsJson || '{}')
+
+            let totalMigratedLogs = 0
+
+            for (const oldKey of oldSystemKeys) {
+                this.internalDebugLog(`Migrating logs from old key: ${oldKey}`)
+
+                const oldLogsJson = await this.storageWorker.getItem(oldKey)
+                if (oldLogsJson) {
+                    const oldLogs = JSON.parse(oldLogsJson)
+                    const logCount = Object.keys(oldLogs).length
+
+                    this.internalDebugLog(`Found ${logCount} logs in old key: ${oldKey}`)
+
+                    Object.assign(currentLogs, oldLogs)
+                    totalMigratedLogs += logCount
+                } else {
+                    this.internalDebugLog(`No logs found in old key: ${oldKey}`)
+                }
+
+                await this.storageWorker.removeItem(oldKey)
+                this.internalDebugLog(`Removed old storage key: ${oldKey}`)
+            }
+
+            await this.storageWorker.setItem(this.storageId, JSON.stringify(currentLogs))
+
+            this.internalDebugLog(`Migration complete: ${totalMigratedLogs} logs migrated from ${oldSystemKeys.length} old keys`)
+
+        } catch (error) {
+            this.internalDebugLog('Error during migration:', error)
+        }
     }
 
     /**
@@ -209,39 +271,6 @@ export default class StorageLogger<DataType = unknown> {
         const result = this.currentLoggerLevelLogLevels.includes(level)
         this.internalDebugLog(`Checking if log level ${level} is allowed under current setting ${this.loggerLevel}: ${result}`)
         return result
-    }
-
-    /**
-     * Used to setup storage functions and logs parser function.
-     * @param getItemFunction Function for getting item from storage.
-     * @param setItemFunction Function for setting item to storage.
-     * @param parseLogFunction Function for parsing logs.
-     * @return void
-     */
-    private setupStorageFunctions (
-        getItemFunction?: GetItemFunction,
-        setItemFunction?: SetItemFunction,
-        parseLogFunction?: ParseLogFunction
-    ) {
-        this.internalDebugLog('Setting up storage functions')
-
-        this.getItem =
-            getItemFunction && typeof getItemFunction === 'function'
-                ? this.isGetItemAsync ? getItemFunction : promisify(getItemFunction as SyncGetItemFunction)
-                : this.defaultGetItemFunction
-        this.internalDebugLog('Get item function setup complete, using custom function:', !!getItemFunction)
-
-        this.setItem =
-            setItemFunction && typeof setItemFunction === 'function'
-                ? this.isSetItemAsync ? setItemFunction : promisify(setItemFunction)
-                : this.defaultSetItemFunction
-        this.internalDebugLog('Set item function setup complete, using custom function:', !!setItemFunction)
-
-        this.parseLog =
-            parseLogFunction && typeof parseLogFunction === 'function'
-                ? parseLogFunction
-                : parseLogDefault
-        this.internalDebugLog('Parse log function setup complete, using custom function:', !!parseLogFunction)
     }
 
     /**
@@ -388,7 +417,7 @@ export default class StorageLogger<DataType = unknown> {
 
         try {
             this.internalDebugLog('Retrieving logs from storage')
-            const storedLogs = await this.getItem(this.storageId)
+            const storedLogs = await this.storageWorker.getItem(this.storageId)
             this.internalDebugLog('Storage data retrieved:', storedLogs)
 
             const storageLogs = JSON.parse(storedLogs || '{}')
@@ -464,7 +493,7 @@ export default class StorageLogger<DataType = unknown> {
             // During emitting sockets new logs could be added
             // To ensure that newly added logs which were added during socket emits will not be lost
             this.internalDebugLog('Re-retrieving logs to capture any added during emit')
-            const logs = await this.getItem(this.storageId)
+            const logs = await this.storageWorker.getItem(this.storageId)
 
             if (!logs) {
                 this.internalDebugLog('No logs found after emit, skipping cleanup')
@@ -480,7 +509,7 @@ export default class StorageLogger<DataType = unknown> {
 
             // Update storage logs object after socket emits
             this.internalDebugLog('Updating storage with remaining logs')
-            await this.setItem(this.storageId, JSON.stringify(logsToStore))
+            await this.storageWorker.setItem(this.storageId, JSON.stringify(logsToStore))
             this.internalDebugLog('Storage updated successfully')
         } catch (err) {
             this.internalDebugLog('Error during emit:', err)
@@ -669,22 +698,29 @@ export default class StorageLogger<DataType = unknown> {
 
     /**
      * Used to initialize the storage if it wasn't created before.
+     * Also migrates any orphaned logs from previous sessions.
      * @return void
      */
     private async initStorage (): Promise<void> {
         this.internalDebugLog('Initializing storage')
 
-        const storedLogs = await this.getItem(this.storageId)
-        this.internalDebugLog('Checking existing logs in storage:', storedLogs)
+        // First, migrate any old logs from previous sessions
+        await this.migrateOldLogs()
+
+        // Then proceed with normal storage initialization
+        const storedLogs = await this.storageWorker.getItem(this.storageId)
+        this.internalDebugLog('Checking existing logs in storage after migration:', storedLogs)
 
         if (!storedLogs || typeof storedLogs !== 'string') {
             this.internalDebugLog('No valid logs found, initializing empty storage')
-            await this.setItem(this.storageId, JSON.stringify({}))
+            await this.storageWorker.setItem(this.storageId, JSON.stringify({}))
             this.storageInitialized = true
             this.internalDebugLog('Storage initialized with empty object')
         } else {
             this.storageInitialized = true
-            this.internalDebugLog('Storage already contains logs, skipping initialization')
+            const existingLogs = JSON.parse(storedLogs)
+            const logCount = Object.keys(existingLogs).length
+            this.internalDebugLog(`Storage already contains ${logCount} logs (including migrated), skipping initialization`)
         }
     }
 
@@ -694,7 +730,7 @@ export default class StorageLogger<DataType = unknown> {
      */
     public async resetStorage (): Promise<void> {
         this.internalDebugLog('Resetting storage')
-        await this.setItem(this.storageId, JSON.stringify({}))
+        await this.storageWorker.setItem(this.storageId, JSON.stringify({}))
         this.internalDebugLog('Storage reset complete')
     }
 
@@ -742,7 +778,7 @@ export default class StorageLogger<DataType = unknown> {
             }
 
             this.internalDebugLog('Retrieving logs from storage')
-            const storedLogs = await this.getItem(this.storageId)
+            const storedLogs = await this.storageWorker.getItem(this.storageId)
 
             this.internalDebugLog('Parsing stored logs')
             const parsedLogs = JSON.parse(storedLogs || '{}')
@@ -752,7 +788,7 @@ export default class StorageLogger<DataType = unknown> {
             this.internalDebugLog(`Added log to parsedLogs with key: ${key}`)
 
             this.internalDebugLog('Updating storage with new logs')
-            await this.setItem(this.storageId, JSON.stringify(parsedLogs))
+            await this.storageWorker.setItem(this.storageId, JSON.stringify(parsedLogs))
             this.internalDebugLog('Storage updated successfully')
         } catch (e) {
             this.internalDebugLog('Error during processLog:', e)
@@ -912,37 +948,6 @@ export default class StorageLogger<DataType = unknown> {
 
         this.internalDebugLog('Initiating queue processing')
         this.processQueue()
-    }
-
-    /**
-     * The default method for getting logs from storage
-     * @param storageId The identifier of storage where logs are stored.
-     * @return string || null
-     */
-    private async defaultGetItemFunction (storageId: string): Promise<string | null> {
-        this.internalDebugLog(`Default getItem called for storageId: ${storageId}`)
-        const result = localStorage.getItem(storageId)
-        this.internalDebugLog('Default getItem result:', result)
-        return result
-    }
-
-    /**
-     * The default method for setting logs into the storage
-     * @param storageId The identifier of storage where to store the logs.
-     * @param logs The logs to be stored.
-     * @return void
-     */
-    private async defaultSetItemFunction (storageId: string, logs: string): Promise<void> {
-        this.internalDebugLog(`Default setItem called for storageId: ${storageId}`)
-        this.internalDebugLog('Setting logs (truncated):', logs.substring(0, 100) + (logs.length > 100 ? '...' : ''))
-
-        try {
-            localStorage.setItem(storageId, logs)
-            this.internalDebugLog('localStorage.setItem completed successfully')
-        } catch (e) {
-            this.internalDebugLog('Error in defaultSetItemFunction:', e)
-            this._errorMethod(e)
-        }
     }
 
     /**
