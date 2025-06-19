@@ -340,6 +340,10 @@ export default class StorageLogger<DataType = unknown> {
             }
 
             this.internalDebugLog(`Setting up emit interval: ${this.socketEmitInterval}ms`)
+            if (this.interval) {
+                this.internalDebugLog('Clearing existing emit interval before creating new one')
+                clearInterval(this.interval)
+            }
             this.interval = setInterval(async () => {
                 this.internalDebugLog('Emit interval triggered')
                 await this.emitLogs()
@@ -415,6 +419,9 @@ export default class StorageLogger<DataType = unknown> {
             return
         }
 
+        this.emitInProgress = true
+        this.internalDebugLog('Emit in progress flag set')
+
         try {
             this.internalDebugLog('Retrieving logs from storage')
             const storedLogs = await this.storageWorker.getItem(this.storageId)
@@ -435,8 +442,6 @@ export default class StorageLogger<DataType = unknown> {
             }
 
             const keysToReset = []
-            this.emitInProgress = true
-            this.internalDebugLog('Emit in progress flag set')
 
             const keys = Object.keys(parsedLogs)
             if (!keys.length) {
@@ -642,6 +647,11 @@ export default class StorageLogger<DataType = unknown> {
             return
         }
 
+        if (this.emitInProgress) {
+            this.internalDebugLog('[STORAGE_LOGGER_START] Emit in progress, deferring start')
+            return
+        }
+
         this.internalDebugLog('[STORAGE_LOGGER_START] Connecting socket')
 
         if (this.socket) {
@@ -655,6 +665,10 @@ export default class StorageLogger<DataType = unknown> {
 
         this.internalDebugLog(`[STORAGE_LOGGER_START] Setting up emit interval: ${this.socketEmitInterval}ms`)
 
+        if (this.interval) {
+            this.internalDebugLog('[STORAGE_LOGGER_START] Clearing existing emit interval before creating new one')
+            clearInterval(this.interval)
+        }
         this.interval = setInterval(async () => {
             this.internalDebugLog('[STORAGE_LOGGER_START] Emit interval triggered')
             await this.emitLogs()
@@ -824,8 +838,12 @@ export default class StorageLogger<DataType = unknown> {
         await this.processLog(...data)
             .finally(() => {
                 this.processing = false
-                this.internalDebugLog('Processing flag cleared, continuing queue processing')
-                this.processQueue()
+                this.internalDebugLog('Processing flag cleared')
+                // Use setTimeout to prevent stack overflow and improve synchronization
+                if (this.queue.length > 0) {
+                    this.internalDebugLog('Scheduling next queue processing')
+                    setTimeout(() => this.processQueue(), 0)
+                }
             })
     }
 
