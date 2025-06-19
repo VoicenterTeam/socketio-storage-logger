@@ -438,6 +438,7 @@ export default class StorageLogger<DataType = unknown> {
 
             if (!Object.keys(parsedLogs).length) {
                 this.internalDebugLog('No logs to emit, skipping')
+                this.emitInProgress = false
                 return
             }
 
@@ -446,13 +447,14 @@ export default class StorageLogger<DataType = unknown> {
             const keys = Object.keys(parsedLogs)
             if (!keys.length) {
                 this.internalDebugLog('No log keys found, skipping')
+                this.emitInProgress = false
                 return
             }
 
             if ((!this.socket || !this.socket.connected) && !this.requestUrl) {
                 const error = new Error('Log request can\'t be sent. Socket is disconnected or requestUrl is not provided')
                 this.internalDebugLog('Emit failed:', error.message)
-
+                this.emitInProgress = false
                 return
             }
 
