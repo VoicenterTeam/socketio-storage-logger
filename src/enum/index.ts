@@ -3,7 +3,6 @@ import { SocketOptions } from '../types'
 export const defaultConnectOptions: SocketOptions = {
     reconnection: true,
     reconnectionDelay: 5000,
-    reconnectionAttempts: 10,
     //perMessageDeflate: false,
     upgrade: false,
     transports: [ 'websocket' ],
