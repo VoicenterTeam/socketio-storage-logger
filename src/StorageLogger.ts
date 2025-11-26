@@ -464,19 +464,6 @@ export default class StorageLogger<DataType = unknown> {
             for (const key of keys) {
                 this.internalDebugLog(`Processing log entry with key: ${key}`)
                 
-                const level = key.split('-')[0]
-                this.internalDebugLog(`Extracted level from key: ${level}`)
-                
-                // Map level to socket event name
-                const eventMap: Record<string, string> = {
-                    'INFO': 'Log',
-                    'DEBUG': 'Debug',
-                    'ERROR': 'Error',
-                    'WARN': 'Warning'
-                }
-                const eventName = eventMap[level] || 'Log'
-                this.internalDebugLog(`Mapped event name: ${eventName}`)
-                
                 const parsedObject = parseLogObject(parsedLogs[key])
                 this.internalDebugLog('Parsed log object:', parsedObject)
 
@@ -495,8 +482,8 @@ export default class StorageLogger<DataType = unknown> {
                 }
 
                 if (this.socket) {
-                    this.internalDebugLog(`Emitting ${eventName} via socket`)
-                    this.socket.emit(eventName, sendingLog)
+                    this.internalDebugLog('Sending log object via socket')
+                    this.socket.send(sendingLog)
                 } else if (this.requestUrl) {
                     this.internalDebugLog('Adding log to HTTP request batch')
                     httpRequestLogs.push(sendingLog)
