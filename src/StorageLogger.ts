@@ -463,7 +463,7 @@ export default class StorageLogger<DataType = unknown> {
 
             for (const key of keys) {
                 this.internalDebugLog(`Processing log entry with key: ${key}`)
-                
+
                 const parsedObject = parseLogObject(parsedLogs[key])
                 this.internalDebugLog('Parsed log object:', parsedObject)
 
@@ -483,7 +483,8 @@ export default class StorageLogger<DataType = unknown> {
 
                 if (this.socket) {
                     this.internalDebugLog('Sending log object via socket')
-                    this.socket.send(sendingLog)
+                    //this.socket.send(sendingLog) // emits log with 'message' as first array element
+                    this.socket.emit('Log', sendingLog)
                 } else if (this.requestUrl) {
                     this.internalDebugLog('Adding log to HTTP request batch')
                     httpRequestLogs.push(sendingLog)
