@@ -143,6 +143,7 @@ export interface LoggerBaseData {
 
 export interface LoggerMainParameters {
     Subsystem: string
+    Fingerprint?: string
     TopDistributorID?: string
     IdentityType?: IdentityType
     IdentityID?: IdentityID
